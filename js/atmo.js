@@ -8,7 +8,7 @@ export const ATMO = {
   infirmerie: { poussiere: 24, brume: { mode: 'air', opacite: .07, teinte: [235, 240, 255], vitesse: .25 }, lueurs: [{ x: 70, y: 40, r: 16, c: [190, 220, 255], pouls: 11 }, { x: 30, y: 35, r: 11, c: [140, 255, 190], pouls: 4.2 }, { x: 64, y: 75, r: 7, c: [140, 230, 255], pouls: 7 }] },
   machines: { poussiere: 50, brume: { mode: 'sol', opacite: .22, teinte: [225, 232, 240], vitesse: .5 }, lueurs: [{ x: 22.5, y: 46, r: 9, c: [255, 160, 70], pouls: 2.2 }, { x: 51, y: 50, r: 14, c: [150, 230, 255], pouls: 6 }, { x: 70, y: 40, r: 10, c: [150, 220, 255], pouls: 8 }] },
   radio: { poussiere: 26, brume: { mode: 'air', opacite: .07, teinte: [255, 235, 210], vitesse: .2 }, lueurs: [{ x: 31, y: 54, r: 9, c: [150, 255, 200], pouls: 4.3 }, { x: 48, y: 54, r: 8, c: [150, 180, 255], pouls: 6.1 }, { x: 74, y: 34, r: 9, c: [150, 255, 200], pouls: 5.2 }, { x: 45, y: 33, r: 20, c: [255, 150, 110], pouls: 17 }] },
-  sas: { poussiere: 18, brume: { mode: 'vitre', opacite: .3, teinte: [205, 225, 220], vitesse: .18, x: 50, y: 38, r: 18 } },
+  sas: { poussiere: 16, brume: { mode: 'vitre', opacite: .35, teinte: [200, 235, 215], vitesse: .18, x: 50, y: 44, r: 13 }, lueurs: [{ x: 50, y: 45, r: 18, c: [120, 220, 170], pouls: 9 }, { x: 21.5, y: 44, r: 6, c: [120, 200, 255], pouls: 3 }, { x: 88, y: 64, r: 9, c: [140, 200, 255], pouls: 7 }] },
 };
 
 let voile = null, toile = null, ctx = null, lieu = null, parts = [], brumes = [], t0 = performance.now(), actif = true, secours = false;
