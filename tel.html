@@ -4,56 +4,59 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Perséphone · instrument</title>
-<meta name="theme-color" content="#111419">
+<meta name="theme-color" content="#07080b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="insigne.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/tel.css">
 </head>
 <body>
+<div id="fond" aria-hidden="true"></div>
 <main id="app">
   <section id="debut" class="vue on">
-    <h1>Perséphone</h1>
-    <p id="debut-role"></p>
-    <button id="activer" type="button">Activer l'instrument</button>
-    <p class="note">Le son et l'orientation du téléphone servent pendant la partie. Gardez l'écran allumé.</p>
-    <p id="debut-err" class="err" role="alert"></p>
+    <div class="debut-image" aria-hidden="true"></div>
+    <div class="debut-texte">
+      <img src="insigne.svg" alt="" width="76" height="76">
+      <h1>Perséphone</h1>
+      <p id="debut-role"></p>
+      <button id="activer" type="button">Activer l'instrument</button>
+      <p class="note">Le son et l'orientation du téléphone servent pendant la partie. Gardez l'écran allumé.</p>
+      <p id="debut-err" class="err" role="alert"></p>
+    </div>
   </section>
 
   <header id="tete">
+    <img src="insigne.svg" alt="" width="30" height="30">
     <span id="role-nom"></span>
-    <span id="liaison">hors liaison</span>
-    <output id="t-o2"></output>
+    <span id="liaison" role="status"><i></i><span class="txt">hors liaison</span></span>
+    <span id="t-o2" aria-label="Oxygène"><span class="cases"></span><output></output></span>
   </header>
 
   <section id="terminal" class="vue">
-    <h2>Interroger HÉLIOS</h2>
+    <div class="voix-helios"><span class="anneau" aria-hidden="true"></span><h2>Une question pour HÉLIOS</h2></div>
     <div id="inters" role="radiogroup" aria-label="Interrogatif"></div>
     <div id="sujets" role="radiogroup" aria-label="Sujet"></div>
+    <h3>Déjà posées</h3>
+    <ol id="hist"></ol>
     <div id="envoi">
       <p id="apercu">Choisissez un mot, puis un sujet.</p>
-      <button id="envoyer" type="button" disabled>Envoyer</button>
+      <button id="envoyer" type="button" disabled>Transmettre</button>
     </div>
-    <h3>Déjà demandé</h3>
-    <ol id="hist"></ol>
     <form id="auto" hidden autocomplete="off">
       <p>HÉLIOS demande une autorisation.</p>
-      <input id="auto-code" inputmode="numeric" maxlength="6" placeholder="Code">
-      <button type="submit">Transmettre</button>
+      <div class="ligne"><input id="auto-code" inputmode="numeric" maxlength="6" placeholder="Code"><button type="submit">Transmettre</button></div>
     </form>
   </section>
 
   <section id="radio" class="vue">
-    <div class="cadran">
-      <p class="freq"><output id="freq">130,0</output><span>MHz</span></p>
-      <div id="echelle"><canvas id="echelle-c"></canvas><span class="aiguille"></span></div>
-      <svg id="vumetre" viewBox="0 0 200 110" aria-hidden="true">
-        <path d="M20 100 A80 80 0 0 1 180 100" class="arc"/>
-        <g id="graduations"></g>
-        <line id="vu-aiguille" x1="100" y1="100" x2="100" y2="30"/>
-        <circle cx="100" cy="100" r="5" class="pivot"/>
-      </svg>
-    </div>
+    <p class="freq"><output id="freq">130,0</output><span>MHz</span></p>
+    <div id="echelle"><canvas id="echelle-c"></canvas><span class="aiguille"></span></div>
+    <svg id="vumetre" viewBox="0 0 200 110" aria-hidden="true">
+      <path d="M20 100 A80 80 0 0 1 180 100" class="arc"/>
+      <g id="graduations"></g>
+      <line id="vu-aiguille" x1="100" y1="100" x2="100" y2="30"/>
+      <circle cx="100" cy="100" r="5" class="pivot"/>
+    </svg>
     <p id="canal">Bruit entre les canaux</p>
     <div id="lecture"></div>
     <button id="diffuser" type="button" hidden>Diffuser sur la station</button>
@@ -66,7 +69,7 @@
     <button type="button" data-vue="radio" aria-pressed="false">Radio</button>
   </nav>
   <div id="notif" role="status"></div>
-  <div id="fini" class="vue"><p>La partie est terminée. Regardez la station.</p></div>
+  <div id="fini" class="vue"><img src="insigne.svg" alt="" width="90" height="90"><p>La partie est terminée.<br>Regardez la station.</p></div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script type="module" src="js/tel.js"></script>

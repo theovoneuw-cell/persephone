@@ -50,8 +50,8 @@ function legende(code, texte) {
 // ------------------------------------------------------------------ liaison
 const client = CODE ? new Client(CODE, {
   presentation: () => ({ role: ROLE }),
-  connecte: () => { $('#liaison').textContent = 'relié à la station'; document.body.classList.add('relie'); },
-  coupure: () => { $('#liaison').textContent = 'liaison perdue, reconnexion…'; document.body.classList.remove('relie'); },
+  connecte: () => { $('#liaison .txt').textContent = 'relié à la station'; document.body.classList.add('relie'); },
+  coupure: () => { $('#liaison .txt').textContent = 'liaison perdue, reconnexion…'; document.body.classList.remove('relie'); },
   message: m => {
     if (m.t === 'etat') { E = m; if (m.sons) M = m.sons; rendre(); }
     else if (m.t === 'notif') notif(m.texte);
@@ -93,14 +93,16 @@ function montrer(v) {
 let inter = null, sujet = null;
 function rendre() {
   if (!E) return;
-  $('#t-o2').textContent = 'O₂ ' + E.o2 + ' %';
+  const cases = $('#t-o2 .cases'); if (!cases.children.length) for (let i = 0; i < 10; i++) cases.append(el('i'));
+  [...cases.children].forEach((c, i) => c.classList.toggle('eteinte', i >= Math.ceil(E.o2 / 10)));
+  $('#t-o2 output').textContent = E.o2 + ' %';
   document.body.classList.toggle('o2-bas', E.o2 < 25);
-  if (E.fin) { document.querySelectorAll('.vue').forEach(v => v.classList.remove('on')); $('#fini').classList.add('on'); return; }
+  if (E.fin) { document.querySelectorAll('.vue').forEach(v => v.classList.remove('on')); $('#fini').classList.add('on'); $('#onglets').hidden = true; $('#envoi').hidden = true; return; }
   // terminal
   const I = $('#inters');
   if (!I.children.length) E.inter.forEach(x => { const b = el('button', null, x); b.type = 'button'; b.setAttribute('role', 'radio'); b.addEventListener('click', () => { inter = x; bip('UI_09', .5); majChoix(); }); I.append(b); });
-  const Su = $('#sujets'); Su.replaceChildren();
-  E.sujets.forEach(s => { const b = el('button', null, s.nom); b.type = 'button'; b.dataset.id = s.id; b.setAttribute('role', 'radio'); b.addEventListener('click', () => { sujet = s.id; bip('UI_09', .5); majChoix(); }); Su.append(b); });
+  const Su = $('#sujets'); const avant = new Set([...Su.querySelectorAll('button')].map(b => b.dataset.id)); const premier = !avant.size; Su.replaceChildren();
+  E.sujets.forEach(s => { const b = el('button', null, s.nom); b.type = 'button'; b.dataset.id = s.id; b.setAttribute('role', 'radio'); b.addEventListener('click', () => { sujet = s.id; bip('UI_09', .5); majChoix(); }); if (!premier && !avant.has(s.id)) b.classList.add('neuf'); Su.append(b); });
   const H = $('#hist'); H.replaceChildren();
   [...E.hist].reverse().forEach(h => {
     const li = el('li', h.mauvaise ? 'mauvaise' : ''); const b = el('button', null, h.q); b.type = 'button';
@@ -117,12 +119,15 @@ function majChoix() {
   document.querySelectorAll('#sujets button').forEach(b => b.setAttribute('aria-checked', b.dataset.id === sujet));
   const s = E && E.sujets.find(x => x.id === sujet);
   const deja = E && E.hist.find(h => h.cle === sujet + '|' + inter);
-  $('#apercu').textContent = inter && s ? (deja ? deja.q + ' (déjà demandé, sans frais)' : inter + ' · ' + s.nom) : inter ? 'Et à propos de quoi ?' : 'Choisissez un mot, puis un sujet.';
+  const ap = $('#apercu');
+  ap.textContent = inter && s ? (deja ? deja.q + ' (déjà posée, sans frais)' : inter + '… ' + s.nom.toLowerCase().replace('hélios', 'HÉLIOS') + ' ?') : inter ? inter + '… ?' : 'Choisissez un mot, puis un sujet.';
+  ap.classList.toggle('vide', !inter);
   $('#envoyer').disabled = !(inter && s && E.enJeu);
 }
 $('#envoyer').addEventListener('click', () => {
   if (!inter || !sujet || !client) return;
   client.envoyer({ t: 'q', sujet, inter });
+  document.body.classList.remove('envoi-en-cours'); void document.body.offsetWidth; document.body.classList.add('envoi-en-cours');
   inter = null; sujet = null; majChoix();
 });
 $('#auto').addEventListener('submit', e => { e.preventDefault(); const v = $('#auto-code').value.trim(); if (!v) return; client.envoyer({ t: 'auto', code: v }); $('#auto-code').value = ''; $('#auto').hidden = true; });
