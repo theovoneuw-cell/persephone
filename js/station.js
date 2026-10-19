@@ -864,21 +864,13 @@ function majLobby() {
   const n = S ? S.n : choixJoueurs;
   const deux = n === 2;
   const voulus = deux ? ['les-deux'] : ['terminal', 'radio'];
-  const eq = $('#equipage'); if (eq) {
-    eq.replaceChildren();
-    const eveilles = D.JOUEURS[n];
-    for (let i = 1; i <= 6; i++) {
-      const li = el('li', eveilles.includes(i) ? 'reveil' : i === 5 ? 'parti' : 'dort');
-      li.append(el('span', 'num', String(i)), el('span', 'role', D.ROLES[i]), el('span', 'etat', eveilles.includes(i) ? 'à réveiller' : i === 1 ? 'réveil impossible' : i === 5 ? 'caisson vide' : 'en sommeil'));
-      eq.append(li);
-    }
-  }
+  const mb = $('#membres'); if (mb) { const e = D.JOUEURS[n]; mb.textContent = 'Membres ' + e.slice(0, -1).join(', ') + ' et ' + e[e.length - 1] + ' · un joueur par membre'; }
   const box = $('#qr'); box.replaceChildren();
   for (const r of voulus) {
     const c = el('figure', 'qr-role');
     const lien = lienTelephone(hote.code) + '&r=' + r;
     const z = el('div', 'qr-code'); c.append(z);
-    try { new QRCode(z, { text: lien, width: 168, height: 168, colorDark: '#1c2230', colorLight: '#eee8de', correctLevel: QRCode.CorrectLevel.M }); } catch (_) {}
+    try { new QRCode(z, { text: lien, width: 150, height: 150, colorDark: '#1c2230', colorLight: '#eee8de', correctLevel: QRCode.CorrectLevel.M }); } catch (_) {}
     const connecte = [...roles.entries()].some(([id, ro]) => ro === r && hote.liens.has(id));
     c.append(el('figcaption', connecte ? 'connecte' : '', (r === 'les-deux' ? 'Terminal et radio' : r === 'terminal' ? 'Terminal' : 'Radio') + (connecte ? ' · connecté' : '')));
     box.append(c);
@@ -914,36 +906,79 @@ async function commencer(etat, reprise) {
   demarrerHorloge();
 }
 
-// ------------------------------------------------------------------ préchargement : HÉLIOS démarre la station
+// ------------------------------------------------------------------ préchargement : le réveil dans le caisson
+// L'écran est la verrière givrée ; le givre fond à mesure que la station se charge vraiment.
+function givre(canvas) {
+  const W = canvas.width, H = canvas.height, g = canvas.getContext('2d');
+  const tex = document.createElement('canvas'); tex.width = W; tex.height = H; const t = tex.getContext('2d');
+  let graine = 2091; const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+  // voile de buée, plus dense vers les bords
+  const v = t.createRadialGradient(W / 2, H / 2, H * .1, W / 2, H / 2, W * .62);
+  v.addColorStop(0, 'rgba(205,222,240,.5)'); v.addColorStop(1, 'rgba(225,236,248,.94)');
+  t.fillStyle = v; t.fillRect(0, 0, W, H);
+  // buée : des nappes plus ou moins épaisses
+  for (let i = 0; i < 70; i++) {
+    const x = alea() * W, y = alea() * H, r = 40 + alea() * 160, n = t.createRadialGradient(x, y, 0, x, y, r);
+    n.addColorStop(0, `rgba(235,242,250,${.12 + alea() * .2})`); n.addColorStop(1, 'rgba(235,242,250,0)'); t.fillStyle = n; t.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // gouttes de condensation : ombre en bas, reflet en haut, comme une lentille
+  const goutte = (x, y, r) => {
+    const o = t.createRadialGradient(x, y + r * .25, r * .2, x, y, r);
+    o.addColorStop(0, 'rgba(40,55,70,.05)'); o.addColorStop(.8, 'rgba(40,55,70,.18)'); o.addColorStop(1, 'rgba(40,55,70,0)');
+    t.fillStyle = o; t.beginPath(); t.ellipse(x, y, r, r * 1.08, 0, 0, 6.283); t.fill();
+    t.fillStyle = 'rgba(255,255,255,.75)'; t.beginPath(); t.ellipse(x - r * .3, y - r * .35, r * .22, r * .14, -.6, 0, 6.283); t.fill();
+  };
+  for (let i = 0; i < 1400; i++) { const r = Math.pow(alea(), 3) * 7 + .7; goutte(alea() * W, alea() * H, r); }
+  // quelques coulures
+  for (let i = 0; i < 14; i++) {
+    const x = alea() * W, y0 = alea() * H * .6, l = 60 + alea() * 200;
+    t.strokeStyle = 'rgba(30,45,60,.08)'; t.lineWidth = 3 + alea() * 3; t.lineCap = 'round';
+    t.beginPath(); t.moveTo(x, y0); t.bezierCurveTo(x + 4, y0 + l * .3, x - 3, y0 + l * .6, x + 1, y0 + l); t.stroke(); goutte(x + 1, y0 + l, 4 + alea() * 3);
+  }
+  let fonte = 0, cible = 0, fin = false;
+  const dessiner = () => {
+    fonte += (cible - fonte) * .045;
+    g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H); g.drawImage(tex, 0, 0);
+    // la buée fond depuis le centre, là où le souffle la réchauffe
+    const r = Math.max(1, fonte * W * .75);
+    const trou = g.createRadialGradient(W / 2, H * .5, r * .2, W / 2, H * .5, r);
+    trou.addColorStop(0, 'rgba(0,0,0,1)'); trou.addColorStop(1, 'rgba(0,0,0,0)');
+    g.globalCompositeOperation = 'destination-out'; g.fillStyle = trou; g.fillRect(0, 0, W, H);
+    if (fonte > 1.25) { g.globalCompositeOperation = 'destination-out'; g.fillStyle = `rgba(0,0,0,${Math.min(1, (fonte - 1.25) * 2)})`; g.fillRect(0, 0, W, H); }
+    if (!fin || fonte < 1.9) requestAnimationFrame(dessiner);
+  };
+  requestAnimationFrame(dessiner);
+  return { fondre: p => { cible = .16 + p * .5; }, ouvrir: () => { cible = 2; fin = true; } };
+}
 async function prelude() {
-  const j = $('#journal-demarrage'), barre = $('#charge'), pr = $('#prelude');
-  for (let i = 0; i < 20; i++) barre.append(el('i'));
-  const ligne = (html, attente = 0) => new Promise(r => setTimeout(() => { const li = el('li'); li.innerHTML = html; j.append(li); r(); }, attente));
+  const pr = $('#prelude'), ligne = $('#prelude-ligne');
+  const fondImg = urlImage('cryo'); if (fondImg) pr.style.setProperty('--fond-prelude', `url("${fondImg}")`);
+  const vitre = givre($('#givre'));
+  const dire = (t, ms = 0) => new Promise(r => setTimeout(() => { ligne.classList.add('change'); setTimeout(() => { ligne.innerHTML = t; ligne.classList.remove('change'); r(); }, 700); }, ms));
   const fonds = M.imgs.map(urlImage).filter(Boolean);
-  const sons = ETUDIANTS ? [] : ['AMB_00', 'AMB_01', 'HEL_S1', 'HEL_S2', 'O2_1', 'CIN_00_2J', 'CIN_00_3J', 'CIN_00_4J'].filter(c => M.sons.includes(c)).map(c => RACINE + 'media/' + M.dossier + '/' + c + '.mp3');
-  const tout = [...fonds, ...sons, RACINE + 'fonts/tenor-sans-latin-400-normal.woff2'];
+  const sons = ETUDIANTS ? [] : ['AMB_00', 'AMB_01', 'MEC_07', 'HEL_S1', 'HEL_S2', 'O2_1', 'CIN_00_2J', 'CIN_00_3J', 'CIN_00_4J'].filter(c => M.sons.includes(c)).map(c => RACINE + 'media/' + M.dossier + '/' + c + '.mp3');
+  const tout = [...fonds, ...sons];
   let fait = 0;
-  const maj = () => { const p = tout.length ? fait / tout.length : 1; pr.style.setProperty('--p', p); [...barre.children].forEach((c, i) => c.classList.toggle('on', i < Math.round(p * 20))); };
+  const maj = () => { const p = tout.length ? fait / tout.length : 1; pr.style.setProperty('--p', p); vitre.fondre(p); };
   const charger = u => (/\.(jpg|webp)$/.test(u) ? new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = u; }) : fetch(u).then(r => r.arrayBuffer()).catch(() => {})).then(() => { fait++; maj(); });
-  const debut = performance.now();
-  await ligne('<b>HÉLIOS</b> · système de bord de la station Perséphone', 300);
-  await ligne('Orbite martienne · altitude 412 km · 2091', 500);
-  await ligne('Équipage : 6 · en cryogénie depuis 211 jours', 500);
+  const debut = performance.now(); maj();
   const tache = Promise.all(tout.map(charger));
-  await ligne('Chargement de la station…', 400);
+  await dire('Station Perséphone<br>orbite martienne, 2091', 900);
+  await dire('Cycle de cryogénie<br>jour 211', 2600);
   await tache;
-  await new Promise(r => setTimeout(r, Math.max(0, 2600 - (performance.now() - debut))));
-  await ligne('Anomalie : réveil anticipé requis. <b>Deux autorisations humaines.</b>', 200);
-  $('#note-son').textContent = ETUDIANTS ? 'Version sans son : chaque son est décrit à l\'écran, avec son code de livrable.' : 'Le son fait partie du jeu. Montez le volume, de préférence sur des enceintes.';
+  await new Promise(r => setTimeout(r, Math.max(0, 6200 - (performance.now() - debut))));
+  await dire('Réveil anticipé<br>de vingt et un jours', 200);
   pr.classList.add('pret');
+  $('#note-son').textContent = ETUDIANTS ? 'Version sans son : chaque son est décrit à l\'écran, avec son code de livrable.' : 'Le son fait partie du jeu. Montez le volume, de préférence sur des enceintes.';
   const e = pr.querySelector('.entrer'); e.hidden = false; requestAnimationFrame(() => e.classList.add('on'));
-  $('#entrer').focus();
+  $('#entrer').focus({ preventScroll: true });
   $('#entrer').addEventListener('click', () => {
     son.demarrer();
+    son.jouer('MEC_07', 'mec', .7);
     son.boucle('amb', 'AMB_00', 'amb', .8, 4);
-    pr.classList.add('fini');
-    document.body.classList.add('ouvert');
-    setTimeout(() => pr.hidden = true, 1700);
+    vitre.ouvrir(); pr.classList.add('ouvre');
+    setTimeout(() => { pr.classList.add('fini'); document.body.classList.add('ouvert'); }, 2300);
+    setTimeout(() => pr.hidden = true, 4300);
   }, { once: true });
 }
 

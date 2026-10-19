@@ -51,39 +51,42 @@
   <div id="cine"></div>
 
   <section id="prelude" aria-live="polite">
-    <div class="anneau-prelude"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="112"/><circle class="trace" cx="120" cy="120" r="112"/></svg><img src="../insigne.svg" alt="" width="150" height="150"></div>
-    <ol id="journal-demarrage"></ol>
-    <div id="charge" aria-hidden="true"></div>
-    <div class="entrer" hidden>
-      <button id="entrer" type="button">Entrer dans la station</button>
-      <p id="note-son"></p>
+    <div class="derriere"></div>
+    <canvas id="givre" width="960" height="540" aria-hidden="true"></canvas>
+    <div class="au-centre">
+      <img class="insigne-prelude" src="../insigne.svg" alt="" width="112" height="112">
+      <p id="prelude-ligne">Station Perséphone</p>
+      <div class="jauge" aria-hidden="true"><i></i></div>
+      <div class="entrer" hidden>
+        <button id="entrer" type="button">Ouvrir le caisson</button>
+        <p id="note-son"></p>
+      </div>
     </div>
   </section>
 
   <section id="accueil">
+    <header class="tete-accueil">
+      <img class="insigne" src="../insigne.svg" alt="Insigne de la mission Perséphone" width="88" height="88">
+      <p>Station scientifique<br>orbite martienne, 2091</p>
+    </header>
     <div class="titre">
-      <img class="insigne" src="../insigne.svg" alt="Insigne de la mission Perséphone" width="200" height="200">
       <h1>Perséphone</h1>
-      <p>Station scientifique, orbite martienne, 2091.<br>Un écran pour tous, un ou deux téléphones.</p>
-    </div>
-    <article class="console">
-      <h2>Protocole de réveil anticipé</h2>
-      <p class="sous">Un joueur par membre d'équipage réveillé.</p>
+      <p class="question">Combien de membres d'équipage HÉLIOS doit-il réveiller ?</p>
       <div id="nb-joueurs" role="radiogroup" aria-label="Nombre de joueurs">
-        <button type="button" data-n="2" aria-pressed="true">2 joueurs</button><button type="button" data-n="3" aria-pressed="false">3 joueurs</button><button type="button" data-n="4" aria-pressed="false">4 joueurs</button>
+        <button type="button" data-n="2" role="radio" aria-pressed="true">2</button>
+        <button type="button" data-n="3" role="radio" aria-pressed="false">3</button>
+        <button type="button" data-n="4" role="radio" aria-pressed="false">4</button>
       </div>
-      <ol id="equipage"></ol>
+      <p id="membres" class="membres"></p>
+    </div>
+    <div class="cote">
       <div class="telephones">
-        <h3>Instruments</h3>
         <div id="qr"></div>
-        <p class="sous">Scannez avec l'appareil photo. Code de la station : <output id="code-station">····</output></p>
+        <p class="code-ligne">Code de la station <output id="code-station">····</output></p>
       </div>
-      <div class="depart">
-        <button id="commencer" type="button">Réveiller l'équipage</button>
-        <button id="reprendre" type="button" hidden>Reprendre la partie en cours</button>
-      </div>
-      <label class="essai"><input type="checkbox" id="sans-tel"> Jouer sans téléphone (essai)</label>
-    </article>
+      <button id="commencer" type="button">Réveiller l'équipage</button>
+      <p class="petits"><button id="reprendre" type="button" hidden>Reprendre la partie en cours</button><label class="essai"><input type="checkbox" id="sans-tel"> Sans téléphone (essai)</label></p>
+    </div>
   </section>
 
   <section id="generique" hidden>
