@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Perséphone · instrument</title>
+<meta name="theme-color" content="#111419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/tel.css">
+</head>
+<body>
+<main id="app">
+  <section id="debut" class="vue on">
+    <h1>Perséphone</h1>
+    <p id="debut-role"></p>
+    <button id="activer" type="button">Activer l'instrument</button>
+    <p class="note">Le son et l'orientation du téléphone servent pendant la partie. Gardez l'écran allumé.</p>
+    <p id="debut-err" class="err" role="alert"></p>
+  </section>
+
+  <header id="tete">
+    <span id="role-nom"></span>
+    <span id="liaison">hors liaison</span>
+    <output id="t-o2"></output>
+  </header>
+
+  <section id="terminal" class="vue">
+    <h2>Interroger HÉLIOS</h2>
+    <div id="inters" role="radiogroup" aria-label="Interrogatif"></div>
+    <div id="sujets" role="radiogroup" aria-label="Sujet"></div>
+    <div id="envoi">
+      <p id="apercu">Choisissez un mot, puis un sujet.</p>
+      <button id="envoyer" type="button" disabled>Envoyer</button>
+    </div>
+    <h3>Déjà demandé</h3>
+    <ol id="hist"></ol>
+    <form id="auto" hidden autocomplete="off">
+      <p>HÉLIOS demande une autorisation.</p>
+      <input id="auto-code" inputmode="numeric" maxlength="6" placeholder="Code">
+      <button type="submit">Transmettre</button>
+    </form>
+  </section>
+
+  <section id="radio" class="vue">
+    <div class="cadran">
+      <p class="freq"><output id="freq">130,0</output><span>MHz</span></p>
+      <div id="echelle"><canvas id="echelle-c"></canvas><span class="aiguille"></span></div>
+      <svg id="vumetre" viewBox="0 0 200 110" aria-hidden="true">
+        <path d="M20 100 A80 80 0 0 1 180 100" class="arc"/>
+        <g id="graduations"></g>
+        <line id="vu-aiguille" x1="100" y1="100" x2="100" y2="30"/>
+        <circle cx="100" cy="100" r="5" class="pivot"/>
+      </svg>
+    </div>
+    <p id="canal">Bruit entre les canaux</p>
+    <div id="lecture"></div>
+    <button id="diffuser" type="button" hidden>Diffuser sur la station</button>
+    <p id="consigne">Tenez le téléphone à plat et tournez-le lentement sur lui-même, comme une molette.</p>
+    <button id="glisser" type="button">Régler au doigt</button>
+  </section>
+
+  <nav id="onglets" hidden>
+    <button type="button" data-vue="terminal" aria-pressed="true">Terminal</button>
+    <button type="button" data-vue="radio" aria-pressed="false">Radio</button>
+  </nav>
+  <div id="notif" role="status"></div>
+  <div id="fini" class="vue"><p>La partie est terminée. Regardez la station.</p></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script type="module" src="js/tel.js"></script>
+</body>
+</html>

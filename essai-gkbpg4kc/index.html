@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perséphone · essai</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0e1116">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../css/station.css">
+</head>
+<body data-version="test">
+<div id="ecran">
+  <div id="decor"></div>
+  <div id="grain" aria-hidden="true"></div>
+
+  <div id="objectif"><span id="objectif-txt"></span><button id="indice" type="button">Indice</button></div>
+
+  <aside id="oxygene" aria-label="Réserve d'oxygène">
+    <div id="o2-cases"></div>
+    <p><span class="o2">O<sub>2</sub></span><output id="o2-val">100 %</output></p>
+  </aside>
+
+  <button id="lieu-nom" type="button" title="Plan de la station"></button>
+
+  <div id="helios" aria-hidden="true"><span class="anneau"></span></div>
+  <button id="journal-helios" type="button" title="Ce qu'HÉLIOS a affiché">Réponses</button>
+  <div id="reponse" aria-live="polite"></div>
+  <p id="sous-titre" aria-live="polite"></p>
+
+  <section id="plateau">
+    <button id="plateau-poignee" type="button"><span id="plateau-compte">Aucune carte</span></button>
+    <div class="table">
+      <form id="piocher" autocomplete="off"><label>Piocher la carte<input inputmode="numeric" maxlength="3" placeholder="n°"></label><button type="submit">Piocher</button></form>
+      <div id="cartes"></div>
+      <button id="assembler" type="button" hidden></button>
+    </div>
+  </section>
+
+  <div class="outils-locaux">
+    <button id="btn-terminal" type="button">Terminal</button>
+    <button id="btn-radio" type="button">Radio</button>
+  </div>
+
+  <div id="etiquette" aria-hidden="true"></div>
+  <div id="toast" role="status"></div>
+  <section id="panneau" class="panneau" aria-live="polite"></section>
+
+  <div id="descriptions" aria-live="polite"><div id="desc-fond"></div><div id="desc-evt"></div></div>
+
+  <div id="cine"></div>
+
+  <section id="accueil">
+    <div class="titre">
+      <h1>Perséphone</h1>
+      <p>Station scientifique, orbite martienne, 2091.</p>
+    </div>
+    <div class="reglages">
+      <fieldset id="nb-joueurs"><legend>Combien êtes-vous ?</legend>
+        <button type="button" data-n="2" aria-pressed="true">2</button><button type="button" data-n="3" aria-pressed="false">3</button><button type="button" data-n="4" aria-pressed="false">4</button>
+      </fieldset>
+      <div class="telephones">
+        <p>Scannez avec un téléphone. Code de la station : <output id="code-station">····</output></p>
+        <div id="qr"></div>
+      </div>
+      <div class="depart">
+        <button id="commencer" type="button">Réveiller l'équipage</button>
+        <button id="reprendre" type="button" hidden>Reprendre la partie en cours</button>
+        <label class="essai"><input type="checkbox" id="sans-tel"> Jouer sans téléphone (essai)</label>
+      </div>
+    </div>
+  </section>
+
+  <section id="generique" hidden>
+    <p class="fin-nom"></p>
+    <p class="fin-temps"></p>
+    <div class="credits">
+      <h2>Perséphone</h2>
+      
+      <p>Son : les étudiants de 3e année, création sonore et mixage, Studio M.</p>
+      <p class="provisoire">Version de test : sons et voix provisoires.</p>
+    </div>
+    <button id="rejouer" type="button">Rejouer</button>
+  </section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="../js/donnees.js"></script>
+<script src="../js/medias-essai-gkbpg4kc.js"></script>
+<script type="module" src="../js/station.js"></script>
+</body>
+</html>

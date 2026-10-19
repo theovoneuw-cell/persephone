@@ -1,0 +1,93 @@
+/* Perséphone · les instruments de poche.
+   Boîtier sombre (on joue dans la pénombre), cadrans en opaline éclairée par l'arrière, laiton. */
+@font-face { font-family: 'Tenor Sans'; src: url(../fonts/tenor-sans-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'Geist'; src: url(../fonts/geist-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Geist'; src: url(../fonts/geist-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url(../fonts/geist-mono-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+
+:root { --boitier: #14120f; --boitier-2: #1e1a16; --filet: rgba(184, 147, 90, .38); --laiton: #b8935a; --laiton-clair: #d9bc86; --lumiere: #f1e7d3; --doux: rgba(241, 231, 211, .62); --opaline: #efe3c8; --encre: #1c2230; --ambre: #e3a447; --graduation: #2a2a2c; --chiffre: #2a2a2c; color-scheme: dark; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; min-height: 100%; background: var(--boitier); }
+body { font: 400 17px/1.45 'Geist', system-ui, sans-serif; color: var(--lumiere); -webkit-font-smoothing: antialiased; overscroll-behavior: none; -webkit-user-select: none; user-select: none; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; touch-action: manipulation; }
+button:disabled { opacity: .4; cursor: default; }
+:focus-visible { outline: 2px solid var(--laiton-clair); outline-offset: 2px; border-radius: 8px; }
+input { font: inherit; -webkit-user-select: text; user-select: text; }
+::selection { background: var(--laiton); color: var(--encre); }
+
+#app { max-width: 520px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+.vue { display: none; padding: 0 20px 110px; }
+.vue.on { display: block; }
+
+#debut { min-height: 100dvh; padding: 0 28px; flex-direction: column; justify-content: center; }
+#debut.on { display: flex; }
+#debut h1 { margin: 0 0 8px; font: 52px/1 'Tenor Sans'; letter-spacing: -.01em; }
+#debut-role { margin: 0 0 40px; font-size: 20px; color: var(--doux); }
+#activer { align-self: stretch; padding: 20px; border-radius: 16px; background: var(--opaline); color: var(--encre); font: 24px 'Tenor Sans'; border: 1px solid var(--laiton); }
+.note { margin: 22px 0 0; font-size: 15px; color: var(--doux); }
+.err { color: var(--ambre); }
+
+#tete { display: none; position: sticky; top: 0; z-index: 5; align-items: baseline; gap: 14px; padding: 16px 20px 14px; background: var(--boitier); border-bottom: 1px solid var(--filet); }
+.actif #tete { display: flex; }
+#role-nom { font: 21px 'Tenor Sans'; white-space: nowrap; flex: none; }
+#liaison { font-size: 13px; color: var(--ambre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.relie #liaison { color: var(--doux); }
+#t-o2 { margin-left: auto; white-space: nowrap; flex: none; font: 500 15px 'Geist Mono'; color: var(--doux); font-variant-numeric: tabular-nums; }
+.o2-bas #t-o2 { color: var(--ambre); }
+
+/* ------------------------------------------------------------------ terminal */
+#terminal h2 { margin: 24px 0 14px; font: 26px 'Tenor Sans'; }
+#terminal h3 { margin: 34px 0 10px; font: 400 15px 'Geist'; color: var(--doux); }
+#inters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 18px; }
+#inters button { padding: 12px 4px; border-radius: 10px; border: 1px solid var(--filet); font-size: 16px; }
+#sujets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#sujets button { text-align: left; padding: 14px 14px; border-radius: 10px; background: var(--boitier-2); border: 1px solid transparent; font-size: 16px; line-height: 1.25; }
+#inters button[aria-checked=true], #sujets button[aria-checked=true] { background: var(--opaline); color: var(--encre); border-color: var(--laiton); }
+#envoi { position: sticky; bottom: 0; margin: 18px -20px 0; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); display: flex; gap: 14px; align-items: center; background: var(--boitier); border-top: 1px solid var(--filet); }
+[data-vue] #envoi { bottom: 64px; }
+#apercu { flex: 1; margin: 0; font-size: 15px; color: var(--doux); }
+#envoyer { flex: none; padding: 14px 22px; border-radius: 12px; background: var(--laiton); color: var(--encre); font-weight: 500; }
+#hist { list-style: none; margin: 0; padding: 0; }
+#hist li button { width: 100%; text-align: left; padding: 12px 0; border-bottom: 1px solid rgba(241, 231, 211, .08); font-size: 16px; color: var(--lumiere); }
+#hist li.mauvaise button { color: var(--doux); }
+#hist small { display: block; font-size: 13px; color: var(--ambre); opacity: .8; }
+#auto { position: fixed; left: 16px; right: 16px; bottom: calc(90px + env(safe-area-inset-bottom)); z-index: 8; padding: 20px; border-radius: 16px; background: var(--opaline); color: var(--encre); border: 1px solid var(--laiton); display: flex; flex-wrap: wrap; gap: 10px; box-shadow: 0 20px 40px -10px #000; }
+#auto[hidden] { display: none; }
+#auto p { width: 100%; margin: 0 0 4px; font: 20px 'Tenor Sans'; }
+#auto input { flex: 1; min-width: 0; padding: 12px; border-radius: 10px; border: 1px solid var(--laiton); background: #fff8ea; color: var(--encre); font: 500 22px 'Geist Mono'; }
+#auto button { padding: 12px 18px; border-radius: 10px; background: var(--encre); color: var(--opaline); }
+
+/* ------------------------------------------------------------------ radio : un récepteur à cadran */
+.cadran { margin: 22px 0 14px; padding: 18px 16px 10px; border-radius: 20px; background: linear-gradient(#211d18, #17140f); border: 1px solid var(--filet); }
+.freq { margin: 0 0 12px; display: flex; align-items: baseline; gap: 8px; }
+#freq { font: 500 56px/1 'Geist Mono'; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.freq span { font-size: 17px; color: var(--doux); }
+#echelle { position: relative; height: 96px; border-radius: 12px; overflow: hidden; background: var(--opaline); box-shadow: inset 0 0 26px rgba(150, 110, 50, .35), inset 0 1px 3px rgba(0, 0, 0, .5); touch-action: none; }
+#echelle canvas { width: 100%; height: 100%; display: block; }
+#echelle .aiguille { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #a3341f; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .2); }
+.doigt #echelle { cursor: ew-resize; }
+#vumetre { display: block; width: 72%; margin: 14px auto 0; }
+#vumetre .arc { fill: none; stroke: rgba(241, 231, 211, .25); stroke-width: 1.5; }
+#graduations line { stroke: rgba(241, 231, 211, .5); stroke-width: 1.5; }
+#vu-aiguille { stroke: var(--laiton-clair); stroke-width: 2.5; stroke-linecap: round; transition: transform .12s linear; }
+#vumetre .pivot { fill: var(--laiton); }
+#canal { margin: 6px 0 10px; font: 22px 'Tenor Sans'; }
+#lecture { min-height: 60px; font: 500 14px/1.5 'Geist Mono'; color: var(--doux); white-space: pre-line; }
+#lecture .leg { margin: 0 0 6px; font: 400 14px 'Geist'; font-style: italic; color: var(--lumiere); white-space: normal; }
+#lecture .leg b { font: 500 13px 'Geist Mono'; font-style: normal; color: var(--laiton-clair); margin-right: 6px; }
+#lecture .cache { margin: 10px 0 0; font: 500 15px/1.55 'Geist Mono'; color: var(--lumiere); white-space: normal; letter-spacing: .01em; }
+#lecture pre { margin: 6px 0 0; font: inherit; }
+#diffuser { width: 100%; margin: 14px 0; padding: 18px; border-radius: 14px; background: var(--opaline); color: var(--encre); font: 22px 'Tenor Sans'; border: 1px solid var(--laiton); animation: appel 2.4s ease-in-out infinite; }
+@keyframes appel { 50% { box-shadow: 0 0 0 6px rgba(217, 188, 134, .18); } }
+#consigne { margin: 18px 0 8px; font-size: 15px; color: var(--doux); }
+#glisser { font-size: 15px; color: var(--laiton-clair); text-decoration: underline; text-underline-offset: 4px; }
+
+#onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); gap: 8px; background: var(--boitier); border-top: 1px solid var(--filet); }
+#onglets[hidden] { display: none; }
+#onglets button { flex: 1; padding: 12px; border-radius: 10px; font: 18px 'Tenor Sans'; color: var(--doux); }
+#onglets button[aria-pressed=true] { color: var(--lumiere); background: var(--boitier-2); }
+
+#notif { position: fixed; left: 16px; right: 16px; top: calc(70px + env(safe-area-inset-top)); z-index: 9; padding: 14px 18px; border-radius: 12px; background: var(--opaline); color: var(--encre); font-size: 16px; border: 1px solid var(--laiton); opacity: 0; transform: translateY(-10px); transition: opacity .3s, transform .4s cubic-bezier(.16, 1, .3, 1); pointer-events: none; }
+#notif.on { opacity: 1; transform: none; }
+#fini p { margin-top: 30vh; text-align: center; font: 24px 'Tenor Sans'; }
