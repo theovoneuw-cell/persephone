@@ -3,11 +3,11 @@
 
 export const ATMO = {
   cryo: { poussiere: 34, brume: { mode: 'sol', opacite: .5, teinte: [190, 215, 240], vitesse: .5 },
-    lueurs: [{ x: 15, y: 60, r: 13, c: [160, 205, 255], pouls: 7 }, { x: 29, y: 57, r: 8, c: [160, 205, 255], pouls: 8.5 }, { x: 71, y: 57, r: 9, c: [160, 205, 255], pouls: 9.5 }, { x: 84, y: 61, r: 13, c: [160, 205, 255], pouls: 7.5 }] },
-  coursive: { poussiere: 46, brume: { mode: 'air', opacite: .16, teinte: [255, 236, 205], vitesse: .35 }, vacille: [{ x: 47, y: 12, l: 4.5, h: 7 }], lueurs: [{ x: 92, y: 45, r: 16, c: [255, 150, 110], pouls: 14 }] },
-  infirmerie: { poussiere: 28, brume: { mode: 'air', opacite: .1, teinte: [255, 230, 190], vitesse: .25 }, lueurs: [{ x: 63, y: 52, r: 13, c: [185, 220, 255], pouls: 11 }, { x: 30, y: 40, r: 9, c: [255, 215, 160], pouls: 6 }] },
+    lueurs: [{ x: 21, y: 56, r: 13, c: [170, 210, 255], pouls: 7 }, { x: 32, y: 53, r: 8, c: [170, 210, 255], pouls: 8.5 }, { x: 68, y: 52, r: 8, c: [170, 210, 255], pouls: 9.5 }, { x: 80, y: 58, r: 13, c: [170, 210, 255], pouls: 7.5 }, { x: 50, y: 44, r: 17, c: [255, 225, 180], pouls: 12 }] },
+  coursive: { poussiere: 40, brume: { mode: 'air', opacite: .1, teinte: [255, 236, 205], vitesse: .35 }, vacille: [{ x: 48.5, y: 30.5, l: 3, h: 3 }], lueurs: [{ x: 90, y: 45, r: 18, c: [255, 150, 110], pouls: 14 }] },
+  infirmerie: { poussiere: 24, brume: { mode: 'air', opacite: .07, teinte: [235, 240, 255], vitesse: .25 }, lueurs: [{ x: 70, y: 40, r: 16, c: [190, 220, 255], pouls: 11 }, { x: 30, y: 35, r: 11, c: [140, 255, 190], pouls: 4.2 }, { x: 64, y: 75, r: 7, c: [140, 230, 255], pouls: 7 }] },
   machines: { poussiere: 70, brume: { mode: 'air', opacite: .24, teinte: [255, 205, 150], vitesse: .6 }, vacille: [{ x: 48, y: 11, l: 19, h: 13 }], lueurs: [{ x: 75, y: 9, r: 14, c: [255, 220, 170], pouls: 9 }] },
-  radio: { poussiere: 30, brume: { mode: 'air', opacite: .08, teinte: [255, 230, 200], vitesse: .2 }, lueurs: [{ x: 48, y: 46, r: 14, c: [255, 210, 150], pouls: 5 }] },
+  radio: { poussiere: 26, brume: { mode: 'air', opacite: .07, teinte: [255, 235, 210], vitesse: .2 }, lueurs: [{ x: 31, y: 54, r: 9, c: [150, 255, 200], pouls: 4.3 }, { x: 48, y: 54, r: 8, c: [150, 180, 255], pouls: 6.1 }, { x: 74, y: 34, r: 9, c: [150, 255, 200], pouls: 5.2 }, { x: 45, y: 33, r: 20, c: [255, 150, 110], pouls: 17 }] },
   sas: { poussiere: 18, brume: { mode: 'vitre', opacite: .3, teinte: [205, 225, 220], vitesse: .18, x: 50, y: 38, r: 18 } },
 };
 

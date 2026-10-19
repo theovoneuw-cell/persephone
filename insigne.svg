@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="t">
+  <title id="t">Insigne de la mission Perséphone</title>
+  <defs>
+    <clipPath id="disque"><circle cx="120" cy="120" r="86"/></clipPath>
+    <path id="haut" d="M 30 120 A 90 90 0 0 1 210 120"/>
+    <path id="bas" d="M 22 120 A 98 98 0 0 0 218 120"/>
+  </defs>
+  <!-- bordure de l'écusson -->
+  <circle cx="120" cy="120" r="116" fill="#14120f"/>
+  <circle cx="120" cy="120" r="112" fill="none" stroke="#b8935a" stroke-width="1.5"/>
+  <circle cx="120" cy="120" r="86.5" fill="none" stroke="#b8935a" stroke-width="1"/>
+  <!-- l'espace, et Mars qui monte par le bas -->
+  <g clip-path="url(#disque)">
+    <rect x="0" y="0" width="240" height="240" fill="#0d1016"/>
+    <circle cx="120" cy="268" r="118" fill="#a8502f"/>
+    <path d="M 2 170 Q 120 140 238 170" fill="none" stroke="#c46a43" stroke-width="1" opacity=".55"/>
+    <path d="M 20 196 Q 120 176 220 196" fill="none" stroke="#7e3920" stroke-width="2" opacity=".5"/>
+    <circle cx="86" cy="186" r="5" fill="#8e4125" opacity=".7"/>
+    <circle cx="150" cy="200" r="3" fill="#8e4125" opacity=".7"/>
+    <!-- l'orbite de la station -->
+    <ellipse cx="120" cy="128" rx="74" ry="22" fill="none" stroke="#f1e7d3" stroke-width="1" opacity=".55" transform="rotate(-12 120 128)"/>
+    <circle cx="186" cy="113" r="3.2" fill="#f1e7d3"/>
+    <!-- six graines de grenade : six membres d'équipage. Une s'est éloignée des autres. -->
+    <g>
+      <g transform="translate(102 94) rotate(-14)"><path d="M0 -9 C 6 -8 8 -1 7 4 C 6 9 -6 9 -7 4 C -8 -1 -6 -8 0 -9 Z" fill="#efe3c8" opacity=".92"/><ellipse cx="-2.4" cy="-3" rx="1.6" ry="2.6" fill="#fff" opacity=".55"/></g>
+      <g transform="translate(117 86) rotate(4)"><path d="M0 -9 C 6 -8 8 -1 7 4 C 6 9 -6 9 -7 4 C -8 -1 -6 -8 0 -9 Z" fill="#efe3c8" opacity=".92"/><ellipse cx="-2.4" cy="-3" rx="1.6" ry="2.6" fill="#fff" opacity=".55"/></g>
+      <g transform="translate(132 95) rotate(18)"><path d="M0 -9 C 6 -8 8 -1 7 4 C 6 9 -6 9 -7 4 C -8 -1 -6 -8 0 -9 Z" fill="#efe3c8" opacity=".92"/><ellipse cx="-2.4" cy="-3" rx="1.6" ry="2.6" fill="#fff" opacity=".55"/></g>
+      <g transform="translate(109 110) rotate(-6)"><path d="M0 -9 C 6 -8 8 -1 7 4 C 6 9 -6 9 -7 4 C -8 -1 -6 -8 0 -9 Z" fill="#efe3c8" opacity=".92"/><ellipse cx="-2.4" cy="-3" rx="1.6" ry="2.6" fill="#fff" opacity=".55"/></g>
+      <g transform="translate(125 111) rotate(10)"><path d="M0 -9 C 6 -8 8 -1 7 4 C 6 9 -6 9 -7 4 C -8 -1 -6 -8 0 -9 Z" fill="#efe3c8" opacity=".92"/><ellipse cx="-2.4" cy="-3" rx="1.6" ry="2.6" fill="#fff" opacity=".55"/></g>
+    </g>
+    <g transform="translate(158 124) rotate(24)"><path d="M0 -9 C 6 -8 8 -1 7 4 C 6 9 -6 9 -7 4 C -8 -1 -6 -8 0 -9 Z" fill="#c4433a" opacity="1"/><ellipse cx="-2.4" cy="-3" rx="1.6" ry="2.6" fill="#fff" opacity=".55"/></g>
+    <!-- étoiles -->
+    <g fill="#f1e7d3" opacity=".7"><circle cx="62" cy="70" r="1"/><circle cx="170" cy="62" r="1.2"/><circle cx="152" cy="46" r=".8"/><circle cx="76" cy="48" r=".8"/><circle cx="190" cy="88" r=".9"/><circle cx="48" cy="104" r=".8"/></g>
+  </g>
+  <!-- légende de l'écusson -->
+  <text font-family="Tenor Sans, serif" font-size="15" fill="#efe3c8" letter-spacing="3.2" text-anchor="middle"><textPath href="#haut" startOffset="50%">PERSÉPHONE</textPath></text>
+  <text font-family="Tenor Sans, serif" font-size="10.5" fill="#d9bc86" letter-spacing="2.4" text-anchor="middle"><textPath href="#bas" startOffset="50%">CAMPAGNE 11 · ORBITE MARTIENNE</textPath></text>
+</svg>

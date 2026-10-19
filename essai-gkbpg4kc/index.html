@@ -6,7 +6,7 @@
 <title>Perséphone · essai</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0e1116">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../insigne.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../css/station.css">
 </head>
 <body data-version="test">
@@ -50,31 +50,47 @@
 
   <div id="cine"></div>
 
+  <section id="prelude" aria-live="polite">
+    <div class="anneau-prelude"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="112"/><circle class="trace" cx="120" cy="120" r="112"/></svg><img src="../insigne.svg" alt="" width="150" height="150"></div>
+    <ol id="journal-demarrage"></ol>
+    <div id="charge" aria-hidden="true"></div>
+    <div class="entrer" hidden>
+      <button id="entrer" type="button">Entrer dans la station</button>
+      <p id="note-son"></p>
+    </div>
+  </section>
+
   <section id="accueil">
     <div class="titre">
+      <img class="insigne" src="../insigne.svg" alt="Insigne de la mission Perséphone" width="200" height="200">
       <h1>Perséphone</h1>
-      <p>Station scientifique, orbite martienne, 2091.</p>
+      <p>Station scientifique, orbite martienne, 2091.<br>Un écran pour tous, un ou deux téléphones.</p>
     </div>
-    <div class="reglages">
-      <fieldset id="nb-joueurs"><legend>Combien êtes-vous ?</legend>
-        <button type="button" data-n="2" aria-pressed="true">2</button><button type="button" data-n="3" aria-pressed="false">3</button><button type="button" data-n="4" aria-pressed="false">4</button>
-      </fieldset>
+    <article class="console">
+      <h2>Protocole de réveil anticipé</h2>
+      <p class="sous">Un joueur par membre d'équipage réveillé.</p>
+      <div id="nb-joueurs" role="radiogroup" aria-label="Nombre de joueurs">
+        <button type="button" data-n="2" aria-pressed="true">2 joueurs</button><button type="button" data-n="3" aria-pressed="false">3 joueurs</button><button type="button" data-n="4" aria-pressed="false">4 joueurs</button>
+      </div>
+      <ol id="equipage"></ol>
       <div class="telephones">
-        <p>Scannez avec un téléphone. Code de la station : <output id="code-station">····</output></p>
+        <h3>Instruments</h3>
         <div id="qr"></div>
+        <p class="sous">Scannez avec l'appareil photo. Code de la station : <output id="code-station">····</output></p>
       </div>
       <div class="depart">
         <button id="commencer" type="button">Réveiller l'équipage</button>
         <button id="reprendre" type="button" hidden>Reprendre la partie en cours</button>
-        <label class="essai"><input type="checkbox" id="sans-tel"> Jouer sans téléphone (essai)</label>
       </div>
-    </div>
+      <label class="essai"><input type="checkbox" id="sans-tel"> Jouer sans téléphone (essai)</label>
+    </article>
   </section>
 
   <section id="generique" hidden>
     <p class="fin-nom"></p>
     <p class="fin-temps"></p>
     <div class="credits">
+      <img class="insigne" src="../insigne.svg" alt="" width="120" height="120">
       <h2>Perséphone</h2>
       
       <p>Son : les étudiants de 3e année, création sonore et mixage, Studio M.</p>

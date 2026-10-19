@@ -103,7 +103,8 @@ input { font: inherit; color: inherit; caret-color: var(--laiton); }
 #lieu-nom:hover::before { width: 100%; }
 
 /* ------------------------------------------------------------------ HÉLIOS : opaline rétroéclairée */
-#helios { position: absolute; left: 50%; bottom: 236px; transform: translateX(-50%); z-index: 14; width: 54px; height: 54px; pointer-events: none; }
+#helios { position: absolute; left: 50%; bottom: 236px; transform: translateX(-50%) scale(.8); z-index: 14; width: 54px; height: 54px; pointer-events: none; opacity: 0; transition: opacity .6s var(--expo), transform .8s var(--expo); }
+#helios.parle { opacity: 1; transform: translateX(-50%); }
 #helios .anneau { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(244, 234, 214, .16); transition: border-color .6s, box-shadow .6s; }
 #helios .anneau::after { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: rgba(244, 234, 214, .14); transition: background .6s; }
 #helios.parle .anneau { border-color: var(--laiton-clair); box-shadow: 0 0 22px 3px rgba(217, 188, 134, .38), inset 0 0 12px rgba(217, 188, 134, .3); animation: souffle 2.6s ease-in-out infinite; }
@@ -308,39 +309,84 @@ input { font: inherit; color: inherit; caret-color: var(--laiton); }
 #cine .passer:hover { color: var(--lumiere); }
 [data-version=etudiants] #cine #descriptions { display: block; }
 
-/* ------------------------------------------------------------------ accueil */
-#accueil { position: absolute; inset: 0; z-index: 70; display: grid; grid-template-columns: 1fr 760px; background: var(--nuit); transition: opacity 1.4s; }
-#accueil::before { content: ''; position: absolute; inset: 0; background: var(--fond, none) center / cover no-repeat; animation: respire 60s ease-in-out infinite alternate; }
-#accueil::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11, 13, 17, 0) 30%, rgba(11, 13, 17, .82) 66%); }
+/* ------------------------------------------------------------------ préchargement : HÉLIOS démarre */
+#prelude { position: absolute; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #050608; transition: opacity 1.6s var(--expo); }
+#prelude.fini { opacity: 0; pointer-events: none; }
+.anneau-prelude { position: relative; width: 180px; height: 180px; margin-bottom: 56px; }
+.anneau-prelude svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anneau-prelude img { position: absolute; left: 15px; top: 15px; width: 150px; height: 150px; opacity: 0; transform: scale(.94); transition: opacity 1.4s var(--expo), transform 1.8s var(--expo); }
+.pret .anneau-prelude img { opacity: 1; transform: none; }
+.anneau-prelude circle { fill: none; stroke: rgba(184, 147, 90, .18); stroke-width: 1.2; }
+.anneau-prelude .trace { stroke: var(--laiton-clair); stroke-width: 1.6; stroke-dasharray: 704; stroke-dashoffset: calc(704 - 704 * var(--p, 0)); transition: stroke-dashoffset .6s var(--expo); }
+#journal-demarrage { list-style: none; margin: 0; padding: 0; width: 760px; min-height: 176px; font: 400 19px/1.75 'Geist Mono'; color: rgba(244, 234, 214, .62); }
+#journal-demarrage li { opacity: 0; transform: translateY(6px); animation: ligne .5s var(--expo) forwards; }
+#journal-demarrage li b { font-weight: 500; color: var(--lumiere); }
+@keyframes ligne { to { opacity: 1; transform: none; } }
+#charge { display: flex; gap: 6px; margin-top: 30px; }
+#charge i { width: 22px; height: 6px; border-radius: 2px; background: rgba(244, 234, 214, .1); transition: background .4s, box-shadow .4s; }
+#charge i.on { background: var(--lumiere); box-shadow: 0 0 8px rgba(244, 234, 214, .3); }
+.entrer { margin-top: 54px; text-align: center; opacity: 0; transform: translateY(10px); transition: opacity .9s var(--expo), transform .9s var(--expo); }
+.entrer.on { opacity: 1; transform: none; }
+#entrer { padding: 18px 36px; border-radius: 14px; border: 1px solid var(--laiton); font: 28px 'Tenor Sans'; color: var(--lumiere); transition: background .2s, color .2s; }
+#entrer:hover { background: var(--nacre); color: var(--encre); }
+#note-son { margin: 22px 0 0; max-width: 560px; font-size: 18px; line-height: 1.5; color: rgba(244, 234, 214, .55); }
+
+/* ------------------------------------------------------------------ accueil : la console de réveil */
+#accueil { position: absolute; inset: 0; z-index: 70; display: grid; grid-template-columns: 1fr 820px; align-items: center; background: var(--nuit); transition: opacity 1.4s; }
+#accueil::before { content: ''; position: absolute; inset: 0; background: var(--fond, none) center / cover no-repeat; }
+#accueil::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 18% 88%, rgba(8, 9, 12, .82), transparent 70%), linear-gradient(90deg, rgba(11, 13, 17, .15) 20%, rgba(11, 13, 17, .78) 62%); }
 #accueil.parti { opacity: 0; pointer-events: none; }
+#accueil::before { opacity: 0; transform: scale(1.08); }
+#accueil .insigne, #accueil h1, #accueil .titre p, .console { opacity: 0; }
+.ouvert #accueil::before { animation: devoile 3.4s var(--expo) forwards, respire 60s 3.4s ease-in-out infinite alternate; }
+.ouvert #accueil .insigne { animation: monte 1.6s .7s var(--expo) forwards; }
+.ouvert #accueil h1 { clip-path: inset(0 0 100% 0); animation: titre 1.8s 1s var(--expo) forwards; }
+.ouvert #accueil .titre p { animation: monte 1.4s 1.5s var(--expo) forwards; }
+.ouvert .console { animation: glisse 1.4s 1.9s var(--expo) forwards; }
+@keyframes devoile { to { opacity: 1; transform: scale(1); } }
+@keyframes monte { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes titre { from { opacity: 1; clip-path: inset(0 0 100% 0); transform: translateY(24px); } to { opacity: 1; clip-path: inset(0 0 -10% 0); transform: none; } }
+@keyframes glisse { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
 #accueil > * { position: relative; z-index: 1; }
-#accueil .titre { align-self: end; padding: 0 0 96px 96px; }
-#accueil h1 { margin: 0; font: 150px/0.95 'Tenor Sans'; letter-spacing: -.02em; color: var(--lumiere); text-shadow: 0 2px 40px rgba(0, 0, 0, .5); }
-#accueil .titre p { margin: 22px 0 0 6px; font-size: 26px; color: rgba(244, 234, 214, .8); }
-#accueil .reglages { align-self: center; display: flex; flex-direction: column; gap: 46px; padding: 0 96px 0 40px; }
-#nb-joueurs { border: 0; margin: 0; padding: 0; display: flex; gap: 16px; align-items: center; }
-#nb-joueurs legend { float: left; margin-right: 26px; font-size: 24px; color: rgba(244, 234, 214, .85); }
-#nb-joueurs button { width: 78px; height: 78px; border-radius: 50%; border: 1px solid rgba(217, 188, 134, .55); font: 36px 'Tenor Sans'; transition: background .25s, color .25s; }
-#nb-joueurs button[aria-pressed=true] { background: var(--nacre); color: var(--encre); border-color: var(--nacre); }
-.telephones p { margin: 0 0 18px; font-size: 21px; color: rgba(244, 234, 214, .8); }
-#code-station { font: 500 22px 'Geist Mono'; color: var(--laiton-clair); letter-spacing: .08em; }
-#qr { display: flex; gap: 22px; }
-.qr-role { margin: 0; padding: 16px 16px 12px; border-radius: 14px; background: var(--nacre); border: 1px solid var(--laiton); color: var(--encre); }
-.qr-code img, .qr-code canvas { display: block; width: 220px; height: 220px; }
-.qr-role figcaption { margin-top: 10px; font-size: 18px; text-align: center; color: var(--encre-2); }
+#accueil .titre { align-self: end; padding: 0 0 110px 110px; }
+#accueil .insigne { display: block; width: 200px; height: 200px; margin-bottom: 40px; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .5)); }
+#accueil h1 { margin: 0; font: 148px/0.95 'Tenor Sans'; letter-spacing: -.02em; color: var(--lumiere); text-shadow: 0 2px 40px rgba(0, 0, 0, .5); }
+#accueil .titre p { margin: 26px 0 0 6px; font-size: 25px; line-height: 1.5; color: rgba(244, 234, 214, .8); }
+.console { width: 720px; padding: 46px 52px 40px; border-radius: 18px; background: var(--nacre); color: var(--encre); border: 1px solid var(--laiton); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .7); }
+.console h2 { margin: 0; font: 36px/1.15 'Tenor Sans'; }
+.console h3 { margin: 0 0 14px; font: 22px 'Tenor Sans'; }
+.console .sous { margin: 8px 0 0; font-size: 19px; color: var(--encre-2); }
+#nb-joueurs { display: flex; gap: 10px; margin: 24px 0 14px; }
+#nb-joueurs button { flex: 1; padding: 13px 0; border-radius: 12px; border: 1px solid rgba(184, 147, 90, .6); font-size: 21px; transition: background .25s, color .25s; }
+#nb-joueurs button[aria-pressed=true] { background: var(--encre); color: var(--nacre); border-color: var(--encre); }
+#equipage { list-style: none; margin: 0 0 26px; padding: 0; border-top: 1px solid var(--nacre-3); }
+#equipage li { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--nacre-3); font-size: 20px; transition: color .4s; }
+#equipage .num { font: 26px/1 'Tenor Sans'; color: var(--laiton); }
+#equipage .etat { font-size: 16px; color: var(--encre-2); display: flex; align-items: center; gap: 10px; }
+#equipage .reveil .etat { color: var(--encre); }
+#equipage .reveil .etat::before { content: ''; width: 9px; height: 19px; border-radius: 2px; background: #6aa7d8; box-shadow: 0 0 8px rgba(106, 167, 216, .6); }
+#equipage .dort, #equipage .parti { color: rgba(28, 34, 48, .45); }
+#equipage .parti .role { text-decoration: line-through; text-decoration-color: rgba(196, 67, 58, .6); }
+.telephones { margin-bottom: 26px; }
+#code-station { font: 500 19px 'Geist Mono'; color: var(--encre); letter-spacing: .06em; }
+#qr { display: flex; gap: 18px; }
+.qr-role { margin: 0; padding: 12px 12px 8px; border-radius: 12px; background: #fbf7ef; border: 1px solid rgba(184, 147, 90, .6); }
+.qr-code img, .qr-code canvas { display: block; width: 168px; height: 168px; }
+.qr-role figcaption { margin-top: 8px; font-size: 16px; text-align: center; color: var(--encre-2); }
 .qr-role figcaption.connecte { color: var(--encre); font-weight: 500; }
-.depart { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
-#commencer, #reprendre { padding: 20px 34px; border-radius: 14px; background: var(--nacre); color: var(--encre); font: 30px 'Tenor Sans'; border: 1px solid var(--laiton); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .7); transition: transform .3s var(--expo), background .2s; }
-#commencer:hover, #reprendre:hover { transform: translateY(-2px); background: #f6f1e8; }
-#reprendre { background: transparent; color: var(--lumiere); font-size: 24px; padding: 14px 24px; box-shadow: none; }
-.essai { display: flex; gap: 10px; align-items: center; font-size: 18px; color: rgba(244, 234, 214, .55); cursor: pointer; }
-.essai input { accent-color: var(--laiton); width: 20px; height: 20px; }
+.depart { display: flex; align-items: center; gap: 18px; }
+#commencer { padding: 18px 32px; border-radius: 14px; background: var(--encre); color: var(--nacre); font: 28px 'Tenor Sans'; transition: transform .3s var(--expo), background .2s; }
+#commencer:hover { transform: translateY(-2px); background: #2c3446; }
+#reprendre { padding: 14px 20px; border-radius: 12px; border: 1px solid rgba(184, 147, 90, .6); font-size: 19px; }
+.essai { display: flex; gap: 10px; align-items: center; margin-top: 18px; font-size: 16px; color: var(--encre-2); cursor: pointer; }
+.essai input { accent-color: var(--encre); width: 18px; height: 18px; }
 
 /* ------------------------------------------------------------------ générique */
 #generique { position: absolute; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: #000; opacity: 0; transition: opacity 2s; }
 #generique.on { opacity: 1; }
 #generique .fin-nom { margin: 0; font: 64px 'Tenor Sans'; }
 #generique .fin-temps { margin: 18px 0 90px; font-size: 22px; color: rgba(244, 234, 214, .6); }
+#generique .credits .insigne { width: 120px; height: 120px; margin-bottom: 26px; opacity: .9; }
 #generique .credits h2 { margin: 0 0 20px; font: 34px 'Tenor Sans'; color: var(--laiton-clair); }
 #generique .credits p { margin: 0 0 10px; font-size: 22px; color: rgba(244, 234, 214, .78); }
 #generique .provisoire { margin-top: 28px !important; font-style: italic; color: rgba(244, 234, 214, .5) !important; }
@@ -348,7 +394,11 @@ input { font: inherit; color: inherit; caret-color: var(--laiton); }
 #rejouer { margin-top: 70px; padding: 14px 28px; border-radius: 12px; border: 1px solid rgba(217, 188, 134, .6); font-size: 22px; }
 
 @media (prefers-reduced-motion: reduce) {
+  .ouvert #accueil::before, .ouvert #accueil .insigne, .ouvert #accueil h1, .ouvert #accueil .titre p, .ouvert .console { animation: fondu 1s forwards; transform: none; clip-path: none; }
+  #journal-demarrage li { animation: fondu .3s forwards; transform: none; }
   .cadrage, #accueil::before, #grain { animation: none; }
   .plan, .plan.sort { transition-duration: .4s; transform: none; }
   #helios.parle .anneau { animation: none; }
 }
+
+@keyframes fondu { to { opacity: 1; } }

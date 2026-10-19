@@ -104,7 +104,7 @@ function plan(lieu) {
   const p = el('div', 'plan'); p.dataset.lieu = lieu;
   const cadre = el('div', 'cadrage'); p.append(cadre);
   const src = urlImage(lieu);
-  if (src) { const i = el('img'); i.src = src; i.alt = ''; i.decoding = 'async'; cadre.append(i); } else p.classList.add('vide');
+  if (src) { const i = el('img'); i.src = src; i.alt = ''; i.decoding = 'async'; i.onerror = () => { i.remove(); p.classList.add('vide'); }; cadre.append(i); } else p.classList.add('vide');
   const vsrc = urlVideo(lieu);
   if (vsrc && !ETUDIANTS_SANS_VIDEO) { const v = el('video'); v.src = vsrc; v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.addEventListener('canplay', () => v.classList.add('pret')); cadre.append(v); }
   const zones = el('div', 'zones');
@@ -864,12 +864,21 @@ function majLobby() {
   const n = S ? S.n : choixJoueurs;
   const deux = n === 2;
   const voulus = deux ? ['les-deux'] : ['terminal', 'radio'];
+  const eq = $('#equipage'); if (eq) {
+    eq.replaceChildren();
+    const eveilles = D.JOUEURS[n];
+    for (let i = 1; i <= 6; i++) {
+      const li = el('li', eveilles.includes(i) ? 'reveil' : i === 5 ? 'parti' : 'dort');
+      li.append(el('span', 'num', String(i)), el('span', 'role', D.ROLES[i]), el('span', 'etat', eveilles.includes(i) ? 'à réveiller' : i === 1 ? 'réveil impossible' : i === 5 ? 'caisson vide' : 'en sommeil'));
+      eq.append(li);
+    }
+  }
   const box = $('#qr'); box.replaceChildren();
   for (const r of voulus) {
     const c = el('figure', 'qr-role');
     const lien = lienTelephone(hote.code) + '&r=' + r;
     const z = el('div', 'qr-code'); c.append(z);
-    try { new QRCode(z, { text: lien, width: 220, height: 220, colorDark: '#1c2230', colorLight: '#eee8de', correctLevel: QRCode.CorrectLevel.M }); } catch (_) {}
+    try { new QRCode(z, { text: lien, width: 168, height: 168, colorDark: '#1c2230', colorLight: '#eee8de', correctLevel: QRCode.CorrectLevel.M }); } catch (_) {}
     const connecte = [...roles.entries()].some(([id, ro]) => ro === r && hote.liens.has(id));
     c.append(el('figcaption', connecte ? 'connecte' : '', (r === 'les-deux' ? 'Terminal et radio' : r === 'terminal' ? 'Terminal' : 'Radio') + (connecte ? ' · connecté' : '')));
     box.append(c);
@@ -887,7 +896,7 @@ function lobby() {
   $('#reprendre').addEventListener('click', () => commencer(ancien, true));
   $('#sans-tel').addEventListener('change', e => { sansTel = e.target.checked; document.body.classList.toggle('sans-tel', sansTel); });
   try { brancher(); } catch (e) { $('#qr').textContent = 'Liaison téléphone indisponible.'; }
-  const img = urlImage('station_mars'); if (img) $('#accueil').style.setProperty('--fond', `url("${img}")`);
+  const img = urlImage('station_mars') || urlImage('radio') || urlImage('cryo'); if (img) $('#accueil').style.setProperty('--fond', `url("${img}")`);
 }
 async function commencer(etat, reprise) {
   son.demarrer();
@@ -903,6 +912,39 @@ async function commencer(etat, reprise) {
     aller('cryo', { silencieux: true });
   } else { aller(S.lieu, { silencieux: true }); if (a('revelation') && !S.fin) son.boucle('musique', 'MUS_01', 'musique', .9, 4); }
   demarrerHorloge();
+}
+
+// ------------------------------------------------------------------ préchargement : HÉLIOS démarre la station
+async function prelude() {
+  const j = $('#journal-demarrage'), barre = $('#charge'), pr = $('#prelude');
+  for (let i = 0; i < 20; i++) barre.append(el('i'));
+  const ligne = (html, attente = 0) => new Promise(r => setTimeout(() => { const li = el('li'); li.innerHTML = html; j.append(li); r(); }, attente));
+  const fonds = M.imgs.map(urlImage).filter(Boolean);
+  const sons = ETUDIANTS ? [] : ['AMB_00', 'AMB_01', 'HEL_S1', 'HEL_S2', 'O2_1', 'CIN_00_2J', 'CIN_00_3J', 'CIN_00_4J'].filter(c => M.sons.includes(c)).map(c => RACINE + 'media/' + M.dossier + '/' + c + '.mp3');
+  const tout = [...fonds, ...sons, RACINE + 'fonts/tenor-sans-latin-400-normal.woff2'];
+  let fait = 0;
+  const maj = () => { const p = tout.length ? fait / tout.length : 1; pr.style.setProperty('--p', p); [...barre.children].forEach((c, i) => c.classList.toggle('on', i < Math.round(p * 20))); };
+  const charger = u => (/\.(jpg|webp)$/.test(u) ? new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = u; }) : fetch(u).then(r => r.arrayBuffer()).catch(() => {})).then(() => { fait++; maj(); });
+  const debut = performance.now();
+  await ligne('<b>HÉLIOS</b> · système de bord de la station Perséphone', 300);
+  await ligne('Orbite martienne · altitude 412 km · 2091', 500);
+  await ligne('Équipage : 6 · en cryogénie depuis 211 jours', 500);
+  const tache = Promise.all(tout.map(charger));
+  await ligne('Chargement de la station…', 400);
+  await tache;
+  await new Promise(r => setTimeout(r, Math.max(0, 2600 - (performance.now() - debut))));
+  await ligne('Anomalie : réveil anticipé requis. <b>Deux autorisations humaines.</b>', 200);
+  $('#note-son').textContent = ETUDIANTS ? 'Version sans son : chaque son est décrit à l\'écran, avec son code de livrable.' : 'Le son fait partie du jeu. Montez le volume, de préférence sur des enceintes.';
+  pr.classList.add('pret');
+  const e = pr.querySelector('.entrer'); e.hidden = false; requestAnimationFrame(() => e.classList.add('on'));
+  $('#entrer').focus();
+  $('#entrer').addEventListener('click', () => {
+    son.demarrer();
+    son.boucle('amb', 'AMB_00', 'amb', .8, 4);
+    pr.classList.add('fini');
+    document.body.classList.add('ouvert');
+    setTimeout(() => pr.hidden = true, 1700);
+  }, { once: true });
 }
 
 // ------------------------------------------------------------------ cinématiques
@@ -1048,4 +1090,5 @@ window.PSP = {
 for (let i = 0; i < 20; i++) $('#o2-cases').append(el('i'));
 atmo.installer($('#decor'));
 lobby();
+prelude();
 if (new URLSearchParams(location.search).has('test')) document.body.classList.add('test');
