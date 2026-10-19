@@ -403,3 +403,77 @@ input { font: inherit; color: inherit; caret-color: var(--laiton); }
 }
 
 @keyframes fondu { to { opacity: 1; } }
+
+/* ------------------------------------------------------------------ écrans de verre fumé
+   Les plaques du jeu sont les écrans de la station : verre fumé, lignes de lumière, laiton.
+   (Le mot manuscrit d'Achard reste un vrai papier.) */
+.plaque { background: rgba(8, 11, 15, .74); backdrop-filter: blur(20px) saturate(1.15); -webkit-backdrop-filter: blur(20px) saturate(1.15); color: var(--lumiere); border: 1px solid rgba(217, 188, 134, .32); border-radius: 6px; box-shadow: 0 34px 90px -24px rgba(0, 0, 0, .85), inset 0 1px 0 rgba(255, 255, 255, .07), inset 0 0 60px rgba(160, 200, 230, .035); }
+.plaque::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(241, 231, 211, .55), transparent); }
+.plaque h2 { font: 300 expanded 30px/1.2 'Archivo', sans-serif; color: var(--lumiere); }
+.plaque p { color: rgba(244, 234, 214, .86); }
+.plaque strong { font-weight: 500; color: var(--laiton-clair); }
+.plaque .sous { color: rgba(244, 234, 214, .58); }
+.plaque > .fermer { color: rgba(244, 234, 214, .55); }
+.plaque > .fermer:hover { color: var(--lumiere); }
+.suite { background: transparent; color: var(--lumiere); border: 1px solid var(--laiton-clair); border-radius: 4px; font: 300 expanded 19px 'Archivo', sans-serif; transition: background .2s, color .2s; }
+.suite:hover { background: var(--nacre); color: var(--encre); }
+.suite small { color: rgba(244, 234, 214, .6); }
+.suite:hover small { color: var(--encre-2); }
+.nombre.grave { color: var(--lumiere); border-color: var(--laiton-clair); text-shadow: none; box-shadow: 0 0 14px rgba(217, 188, 134, .25); }
+/* clavier */
+.clavier .affiche { font: 500 54px/1 'Atkinson Mono', monospace; color: var(--lumiere); letter-spacing: .12em; text-shadow: 0 0 18px rgba(244, 234, 214, .35); }
+.clavier .affiche.faux { color: #e0826a; }
+.touche { background: rgba(244, 234, 214, .04); border: 1px solid rgba(217, 188, 134, .26); border-radius: 4px; box-shadow: none; font: 300 expanded 28px 'Archivo', sans-serif; color: var(--lumiere); transition: background .15s, border-color .15s; }
+.touche:hover { background: rgba(244, 234, 214, .09); }
+.touche:active { transform: none; background: rgba(217, 188, 134, .22); box-shadow: 0 0 18px rgba(217, 188, 134, .25); }
+.touche.ok { background: transparent; border-color: var(--laiton-clair); color: var(--laiton-clair); box-shadow: none; font-size: 20px; }
+.touches .touche:nth-child(10) { color: rgba(244, 234, 214, .6); font: 400 18px 'Atkinson', sans-serif; }
+/* tableaux, registre, lecteur */
+.plaque th { color: rgba(244, 234, 214, .55); border-bottom-color: rgba(217, 188, 134, .5); }
+.plaque td { border-bottom-color: rgba(244, 234, 214, .1); }
+.plaque td:first-child { font-family: 'Atkinson Mono', monospace; color: var(--laiton-clair); }
+.msg { border-bottom-color: rgba(244, 234, 214, .1); }
+.msg .quand { color: rgba(244, 234, 214, .5); }
+.piste { background: rgba(244, 234, 214, .03); border: 1px solid rgba(217, 188, 134, .22); border-radius: 4px; color: var(--lumiere); }
+.piste:hover:not(:disabled) { background: rgba(244, 234, 214, .08); }
+.piste .jour { font: 300 expanded 24px 'Archivo', sans-serif; }
+.piste .etat { color: rgba(244, 234, 214, .5); }
+.piste.lit { background: rgba(217, 188, 134, .16); border-color: var(--laiton-clair); color: var(--lumiere); }
+/* tuyauterie : le schéma lumineux du pupitre */
+.tuyaux .grille { background: transparent; border: 1px solid rgba(160, 210, 240, .18); border-radius: 4px; }
+.case { background: rgba(160, 210, 240, .035); border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(160, 210, 240, .06); }
+.case:not(.nue):hover { background: rgba(160, 210, 240, .08); }
+.case .tube { stroke: rgba(220, 238, 250, .9); stroke-width: 14; filter: drop-shadow(0 0 5px rgba(150, 210, 255, .7)); }
+.case .joint { fill: #0b1016; stroke: rgba(220, 238, 250, .9); stroke-width: 3; }
+.case .bout { fill: rgba(8, 11, 15, .9); stroke: var(--laiton-clair); stroke-width: 3; }
+.case .manque { stroke: rgba(220, 238, 250, .45); }
+.case .vanne { fill: rgba(8, 11, 15, .9); stroke: var(--laiton-clair); stroke-width: 3; }
+.case .volant { stroke: var(--laiton-clair); }
+.case.v-ouverte .vanne { fill: rgba(227, 164, 71, .35); stroke: var(--ambre); }
+.case.v-ouverte .volant { stroke: var(--ambre); }
+.tuyaux .legende { color: rgba(244, 234, 214, .6); }
+.tuyaux .legende span::before { background: rgba(8, 11, 15, .9); border-color: var(--laiton-clair); }
+/* contrôle biologique, autorisations, plan, terminal local */
+.main { background: rgba(244, 234, 214, .04); border-color: rgba(217, 188, 134, .35); color: var(--lumiere); }
+.main .num { font: 200 expanded 46px/1 'Archivo', sans-serif; }
+.main.posee { background: rgba(120, 220, 170, .14); border-color: rgba(120, 220, 170, .7); color: var(--lumiere); box-shadow: 0 0 26px rgba(120, 220, 170, .25); }
+.fente { background: rgba(244, 234, 214, .03); border-color: rgba(217, 188, 134, .3); border-radius: 4px; }
+.fente.ok { background: rgba(217, 188, 134, .12); color: var(--lumiere); border-color: var(--laiton-clair); }
+.choix-membre button, .choix-fin button, .terminal-local button { border-color: rgba(217, 188, 134, .3); border-radius: 4px; color: rgba(244, 234, 214, .8); }
+.choix-membre button.on, .choix-fin button.on, .terminal-local button.on { background: var(--nacre); color: var(--encre); border-color: var(--nacre); }
+.fente input, .terminal-local .auto input, .radio-locale input[type=range] { background: rgba(244, 234, 214, .05); color: var(--lumiere); border-color: rgba(217, 188, 134, .4); border-radius: 4px; }
+.plan-station button { border-color: rgba(217, 188, 134, .25); border-radius: 4px; font: 300 expanded 22px 'Archivo', sans-serif; color: var(--lumiere); }
+.plan-station button:hover:not(:disabled) { background: rgba(244, 234, 214, .07); }
+.plan-station button.ici { background: rgba(217, 188, 134, .16); color: var(--lumiere); border-color: var(--laiton-clair); }
+/* le papier reste du papier */
+.plaque.manuscrit { background: #ece2cc; color: #233049; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(120, 100, 70, .3); border-radius: 2px; transform: rotate(-.8deg); box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .8); }
+.plaque.manuscrit::before { display: none; }
+.plaque.manuscrit h2 { color: #233049; font-size: 22px; }
+.plaque.manuscrit > .fermer { color: #4a5163; }
+/* cartes du plateau : fiches de verre avec leur photo */
+#plateau .table { background: rgba(6, 8, 11, .92); border-top: 1px solid rgba(217, 188, 134, .45); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.carte { background: rgba(14, 18, 24, .95); border: 1px solid rgba(217, 188, 134, .35); border-radius: 6px; color: var(--lumiere); }
+.carte .num { font: 200 expanded 28px/1 'Archivo', sans-serif; color: var(--laiton-clair); }
+.carte .nom { color: rgba(244, 234, 214, .85); }
+#piocher input { font-family: 'Atkinson Mono', monospace; }
+#piocher button, #assembler { border-radius: 4px; font: 300 expanded 17px 'Archivo', sans-serif; }
