@@ -57,7 +57,8 @@ export const CINE = {
   CIN_B: () => ({
     duree: 90, audio: 'CIN_B',
     plans: [
-      { t: 0, src: 'sas', duree: 20, mvt: 'lent' },
+      { t: 0, src: 'sas', duree: 12, mvt: 'lent' },
+      { t: 11, src: 'sas_vide', duree: 9, mvt: 'lent' },
       { t: 18, src: 'cinB_coursive', duree: 22, mvt: 'recule' },
       { t: 38, src: 'radio', duree: 18, mvt: 'lent' },
       { t: 54, src: 'cinB_station', duree: 26, mvt: 'recule' },
