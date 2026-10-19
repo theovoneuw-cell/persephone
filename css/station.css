@@ -338,12 +338,12 @@ input { font: inherit; color: inherit; caret-color: var(--laiton); }
 /* ------------------------------------------------------------------ accueil : composé sur l'image, comme un générique */
 #accueil { position: absolute; inset: 0; z-index: 70; background: var(--nuit); transition: opacity 1.4s; }
 #accueil::before { content: ''; position: absolute; inset: 0; background: var(--fond, none) center / cover no-repeat; }
-#accueil::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(5, 6, 9, .92) 0%, rgba(5, 6, 9, .55) 38%, rgba(5, 6, 9, .1) 70%, rgba(5, 6, 9, .45) 100%); }
+#accueil::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 34% 26% at 12% 10%, rgba(5, 6, 9, .78), transparent 75%), linear-gradient(0deg, rgba(5, 6, 9, .92) 0%, rgba(5, 6, 9, .55) 38%, rgba(5, 6, 9, .1) 70%, rgba(5, 6, 9, .5) 100%); }
 #accueil.parti { opacity: 0; pointer-events: none; }
 #accueil > * { position: absolute; z-index: 1; }
 .tete-accueil { left: 110px; top: 84px; display: flex; align-items: center; gap: 26px; }
 .tete-accueil .insigne { width: 88px; height: 88px; }
-.tete-accueil p { margin: 0; font: 300 expanded 18px/1.5 'Archivo', sans-serif; color: rgba(244, 234, 214, .75); }
+.tete-accueil p { margin: 0; font: 300 expanded 18px/1.5 'Archivo', sans-serif; color: rgba(244, 234, 214, .82); text-shadow: 0 1px 14px rgba(0, 0, 0, .9); }
 #accueil .titre { left: 110px; bottom: 96px; }
 #accueil h1 { margin: 0 0 0 -6px; font: 200 expanded 132px/1 'Archivo', sans-serif; letter-spacing: -.015em; color: var(--lumiere); }
 .question { margin: 40px 0 10px; font-size: 25px; color: rgba(244, 234, 214, .82); }
