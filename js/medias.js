@@ -1,1 +1,1 @@
-window.__M={"sons":[],"imgs":["coursive","cryo","infirmerie","radio"],"vids":[]};
+window.__M={"sons":[],"imgs":["coursive","cryo","infirmerie","machines","radio"],"vids":[]};

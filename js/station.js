@@ -888,7 +888,7 @@ function lobby() {
   $('#reprendre').addEventListener('click', () => commencer(ancien, true));
   $('#sans-tel').addEventListener('change', e => { sansTel = e.target.checked; document.body.classList.toggle('sans-tel', sansTel); });
   try { brancher(); } catch (e) { $('#qr').textContent = 'Liaison téléphone indisponible.'; }
-  const img = urlImage('station_mars') || urlImage('radio') || urlImage('cryo'); if (img) $('#accueil').style.setProperty('--fond', `url("${img}")`);
+  const img = urlImage('station_proche') || urlImage('station_mars') || urlImage('radio') || urlImage('cryo'); if (img) $('#accueil').style.setProperty('--fond', `url("${img}")`);
 }
 async function commencer(etat, reprise) {
   son.demarrer();
@@ -906,79 +906,49 @@ async function commencer(etat, reprise) {
   demarrerHorloge();
 }
 
-// ------------------------------------------------------------------ préchargement : le réveil dans le caisson
-// L'écran est la verrière givrée ; le givre fond à mesure que la station se charge vraiment.
-function givre(canvas) {
-  const W = canvas.width, H = canvas.height, g = canvas.getContext('2d');
-  const tex = document.createElement('canvas'); tex.width = W; tex.height = H; const t = tex.getContext('2d');
-  let graine = 2091; const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
-  // voile de buée, plus dense vers les bords
-  const v = t.createRadialGradient(W / 2, H / 2, H * .1, W / 2, H / 2, W * .62);
-  v.addColorStop(0, 'rgba(205,222,240,.5)'); v.addColorStop(1, 'rgba(225,236,248,.94)');
-  t.fillStyle = v; t.fillRect(0, 0, W, H);
-  // buée : des nappes plus ou moins épaisses
-  for (let i = 0; i < 70; i++) {
-    const x = alea() * W, y = alea() * H, r = 40 + alea() * 160, n = t.createRadialGradient(x, y, 0, x, y, r);
-    n.addColorStop(0, `rgba(235,242,250,${.12 + alea() * .2})`); n.addColorStop(1, 'rgba(235,242,250,0)'); t.fillStyle = n; t.fillRect(x - r, y - r, r * 2, r * 2);
-  }
-  // gouttes de condensation : ombre en bas, reflet en haut, comme une lentille
-  const goutte = (x, y, r) => {
-    const o = t.createRadialGradient(x, y + r * .25, r * .2, x, y, r);
-    o.addColorStop(0, 'rgba(40,55,70,.05)'); o.addColorStop(.8, 'rgba(40,55,70,.18)'); o.addColorStop(1, 'rgba(40,55,70,0)');
-    t.fillStyle = o; t.beginPath(); t.ellipse(x, y, r, r * 1.08, 0, 0, 6.283); t.fill();
-    t.fillStyle = 'rgba(255,255,255,.75)'; t.beginPath(); t.ellipse(x - r * .3, y - r * .35, r * .22, r * .14, -.6, 0, 6.283); t.fill();
+// ------------------------------------------------------------------ préchargement : la station dérive au-dessus de Mars
+function etoiles(canvas) {
+  // trois plans d'étoiles qui glissent à des vitesses différentes : la profondeur de l'espace
+  const g = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+  let graine = 17; const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+  const plans = [[.06, 160, .9], [.16, 70, 1.4], [.4, 22, 2.2]].map(([v, n, taille]) => ({ v, taille, pts: Array.from({ length: n }, () => ({ x: alea() * W, y: alea() * H, b: .3 + alea() * .7, ph: alea() * 6 })) }));
+  let vite = 1, actif = true, t0 = performance.now();
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const image = now => {
+    if (!actif) return;
+    const t = (now - t0) / 1000; g.clearRect(0, 0, W, H);
+    for (const p of plans) for (const e of p.pts) {
+      if (!reduit) { e.x -= p.v * vite; e.y += p.v * vite * .18; if (e.x < -4) e.x += W + 8; if (e.y > H + 4) e.y -= H + 8; }
+      g.fillStyle = `rgba(240,236,228,${e.b * (.75 + .25 * Math.sin(t * 1.3 + e.ph))})`;
+      if (vite > 2) { g.fillRect(e.x, e.y, p.taille * vite * 1.5, p.taille * .8); } else { g.beginPath(); g.arc(e.x, e.y, p.taille * .55, 0, 6.283); g.fill(); }
+    }
+    requestAnimationFrame(image);
   };
-  for (let i = 0; i < 1400; i++) { const r = Math.pow(alea(), 3) * 7 + .7; goutte(alea() * W, alea() * H, r); }
-  // quelques coulures
-  for (let i = 0; i < 14; i++) {
-    const x = alea() * W, y0 = alea() * H * .6, l = 60 + alea() * 200;
-    t.strokeStyle = 'rgba(30,45,60,.08)'; t.lineWidth = 3 + alea() * 3; t.lineCap = 'round';
-    t.beginPath(); t.moveTo(x, y0); t.bezierCurveTo(x + 4, y0 + l * .3, x - 3, y0 + l * .6, x + 1, y0 + l); t.stroke(); goutte(x + 1, y0 + l, 4 + alea() * 3);
-  }
-  let fonte = 0, cible = 0, fin = false;
-  const dessiner = () => {
-    fonte += (cible - fonte) * .045;
-    g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H); g.drawImage(tex, 0, 0);
-    // la buée fond depuis le centre, là où le souffle la réchauffe
-    const r = Math.max(1, fonte * W * .75);
-    const trou = g.createRadialGradient(W / 2, H * .5, r * .2, W / 2, H * .5, r);
-    trou.addColorStop(0, 'rgba(0,0,0,1)'); trou.addColorStop(1, 'rgba(0,0,0,0)');
-    g.globalCompositeOperation = 'destination-out'; g.fillStyle = trou; g.fillRect(0, 0, W, H);
-    if (fonte > 1.25) { g.globalCompositeOperation = 'destination-out'; g.fillStyle = `rgba(0,0,0,${Math.min(1, (fonte - 1.25) * 2)})`; g.fillRect(0, 0, W, H); }
-    if (!fin || fonte < 1.9) requestAnimationFrame(dessiner);
-  };
-  requestAnimationFrame(dessiner);
-  return { fondre: p => { cible = .16 + p * .5; }, ouvrir: () => { cible = 2; fin = true; } };
+  requestAnimationFrame(image);
+  return { accelerer: () => { const a = performance.now(); const f = () => { vite = 1 + ((performance.now() - a) / 1000) ** 2 * 14; if (vite < 60 && actif) requestAnimationFrame(f); }; f(); }, arreter: () => { actif = false; } };
 }
 async function prelude() {
   const pr = $('#prelude'), ligne = $('#prelude-ligne');
-  const fondImg = urlImage('cryo'); if (fondImg) pr.style.setProperty('--fond-prelude', `url("${fondImg}")`);
-  const vitre = givre($('#givre'));
-  const dire = (t, ms = 0) => new Promise(r => setTimeout(() => { ligne.classList.add('change'); setTimeout(() => { ligne.innerHTML = t; ligne.classList.remove('change'); r(); }, 700); }, ms));
+  const ext = urlImage('station_mars'); if (ext) pr.style.setProperty('--fond-prelude', `url("${ext}")`);
+  const ciel = etoiles($('#etoiles'));
   const fonds = M.imgs.map(urlImage).filter(Boolean);
-  const sons = ETUDIANTS ? [] : ['AMB_00', 'AMB_01', 'MEC_07', 'HEL_S1', 'HEL_S2', 'O2_1', 'CIN_00_2J', 'CIN_00_3J', 'CIN_00_4J'].filter(c => M.sons.includes(c)).map(c => RACINE + 'media/' + M.dossier + '/' + c + '.mp3');
+  const sons = ETUDIANTS ? [] : ['AMB_00', 'AMB_01', 'HEL_S1', 'HEL_S2', 'O2_1', 'MUS_01', 'CIN_00_2J', 'CIN_00_3J', 'CIN_00_4J'].filter(c => M.sons.includes(c)).map(c => RACINE + 'media/' + M.dossier + '/' + c + '.mp3');
   const tout = [...fonds, ...sons];
   let fait = 0;
-  const maj = () => { const p = tout.length ? fait / tout.length : 1; pr.style.setProperty('--p', p); vitre.fondre(p); };
+  const maj = () => pr.style.setProperty('--p', tout.length ? fait / tout.length : 1);
   const charger = u => (/\.(jpg|webp)$/.test(u) ? new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = u; }) : fetch(u).then(r => r.arrayBuffer()).catch(() => {})).then(() => { fait++; maj(); });
   const debut = performance.now(); maj();
-  const tache = Promise.all(tout.map(charger));
-  await dire('Station Perséphone<br>orbite martienne, 2091', 900);
-  await dire('Cycle de cryogénie<br>jour 211', 2600);
-  await tache;
-  await new Promise(r => setTimeout(r, Math.max(0, 6200 - (performance.now() - debut))));
-  await dire('Réveil anticipé<br>de vingt et un jours', 200);
+  await Promise.all(tout.map(charger));
+  await new Promise(r => setTimeout(r, Math.max(0, 5200 - (performance.now() - debut))));
   pr.classList.add('pret');
   $('#note-son').textContent = ETUDIANTS ? 'Version sans son : chaque son est décrit à l\'écran, avec son code de livrable.' : 'Le son fait partie du jeu. Montez le volume, de préférence sur des enceintes.';
   const e = pr.querySelector('.entrer'); e.hidden = false; requestAnimationFrame(() => e.classList.add('on'));
-  $('#entrer').focus({ preventScroll: true });
   $('#entrer').addEventListener('click', () => {
     son.demarrer();
-    son.jouer('MEC_07', 'mec', .7);
-    son.boucle('amb', 'AMB_00', 'amb', .8, 4);
-    vitre.ouvrir(); pr.classList.add('ouvre');
-    setTimeout(() => { pr.classList.add('fini'); document.body.classList.add('ouvert'); }, 2300);
-    setTimeout(() => pr.hidden = true, 4300);
+    son.boucle('amb', 'AMB_00', 'amb', .8, 5);
+    pr.classList.add('rejoint'); ciel.accelerer();
+    setTimeout(() => { pr.classList.add('fini'); document.body.classList.add('ouvert'); }, 2200);
+    setTimeout(() => { pr.hidden = true; ciel.arreter(); }, 4200);
   }, { once: true });
 }
 
