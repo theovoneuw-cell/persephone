@@ -5,8 +5,8 @@ export const ATMO = {
   cryo: { poussiere: 34, brume: { mode: 'sol', opacite: .5, teinte: [190, 215, 240], vitesse: .5 },
     lueurs: [{ x: 15, y: 60, r: 13, c: [160, 205, 255], pouls: 7 }, { x: 29, y: 57, r: 8, c: [160, 205, 255], pouls: 8.5 }, { x: 71, y: 57, r: 9, c: [160, 205, 255], pouls: 9.5 }, { x: 84, y: 61, r: 13, c: [160, 205, 255], pouls: 7.5 }] },
   coursive: { poussiere: 46, brume: { mode: 'air', opacite: .16, teinte: [255, 236, 205], vitesse: .35 }, vacille: [{ x: 47, y: 12, l: 4.5, h: 7 }], lueurs: [{ x: 92, y: 45, r: 16, c: [255, 150, 110], pouls: 14 }] },
-  infirmerie: { poussiere: 28, brume: { mode: 'air', opacite: .1, teinte: [255, 230, 190], vitesse: .25 }, lueurs: [{ x: 76, y: 46, r: 10, c: [170, 210, 255], pouls: 11 }] },
-  machines: { poussiere: 70, brume: { mode: 'air', opacite: .24, teinte: [255, 205, 150], vitesse: .6 }, vacille: [{ x: 60, y: 8, l: 30, h: 20 }] },
+  infirmerie: { poussiere: 28, brume: { mode: 'air', opacite: .1, teinte: [255, 230, 190], vitesse: .25 }, lueurs: [{ x: 63, y: 52, r: 13, c: [185, 220, 255], pouls: 11 }, { x: 30, y: 40, r: 9, c: [255, 215, 160], pouls: 6 }] },
+  machines: { poussiere: 70, brume: { mode: 'air', opacite: .24, teinte: [255, 205, 150], vitesse: .6 }, vacille: [{ x: 48, y: 11, l: 19, h: 13 }], lueurs: [{ x: 75, y: 9, r: 14, c: [255, 220, 170], pouls: 9 }] },
   radio: { poussiere: 30, brume: { mode: 'air', opacite: .08, teinte: [255, 230, 200], vitesse: .2 }, lueurs: [{ x: 48, y: 46, r: 14, c: [255, 210, 150], pouls: 5 }] },
   sas: { poussiere: 18, brume: { mode: 'vitre', opacite: .3, teinte: [205, 225, 220], vitesse: .18, x: 50, y: 38, r: 18 } },
 };
@@ -95,7 +95,11 @@ function boucle(now) {
     // tubes qui vacillent
     for (const v of lieu.vacille || []) {
       const s = Math.sin(t * 13.7 + v.x) * Math.sin(t * 7.3) > .55 || (t % 6.1 < .12);
-      if (s) { ctx.fillStyle = 'rgba(8,8,10,.55)'; ctx.fillRect(v.x / 100 * L, v.y / 100 * H, v.l / 100 * L, v.h / 100 * H); }
+      if (s) {
+        const cx = (v.x + v.l / 2) / 100 * L, cy = (v.y + v.h / 2) / 100 * H, rx = v.l / 100 * L * .7;
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx); g.addColorStop(0, 'rgba(6,6,8,.6)'); g.addColorStop(1, 'rgba(6,6,8,0)');
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(1, v.h / v.l * 1.4); ctx.translate(-cx, -cy); ctx.fillStyle = g; ctx.fillRect(cx - rx, cy - rx, rx * 2, rx * 2); ctx.restore();
+      }
     }
     // poussière dans la lumière
     ctx.globalCompositeOperation = 'screen';

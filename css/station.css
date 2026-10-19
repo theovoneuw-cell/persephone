@@ -104,7 +104,7 @@ input { font: inherit; color: inherit; caret-color: var(--laiton); }
 
 /* ------------------------------------------------------------------ HÉLIOS : opaline rétroéclairée */
 #helios { position: absolute; left: 50%; bottom: 236px; transform: translateX(-50%); z-index: 14; width: 54px; height: 54px; pointer-events: none; }
-#helios .anneau { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(244, 234, 214, .32); transition: border-color .6s, box-shadow .6s; }
+#helios .anneau { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(244, 234, 214, .16); transition: border-color .6s, box-shadow .6s; }
 #helios .anneau::after { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: rgba(244, 234, 214, .14); transition: background .6s; }
 #helios.parle .anneau { border-color: var(--laiton-clair); box-shadow: 0 0 22px 3px rgba(217, 188, 134, .38), inset 0 0 12px rgba(217, 188, 134, .3); animation: souffle 2.6s ease-in-out infinite; }
 #helios.parle .anneau::after { background: rgba(246, 226, 180, .75); }
