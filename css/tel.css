@@ -9,7 +9,7 @@
 
 :root {
   --nuit: #07080b; --filet: rgba(217, 188, 134, .22); --laiton: #b8935a; --laiton-clair: #d9bc86;
-  --lumiere: #f1e7d3; --doux: rgba(241, 231, 211, .6); --pale: rgba(241, 231, 211, .32);
+  --lumiere: #f1e7d3; --doux: rgba(241, 231, 211, .74); --pale: rgba(241, 231, 211, .58);
   --opaline: #efe3c8; --encre: #1c2230; --ambre: #e3a447; --expo: cubic-bezier(.16, 1, .3, 1);
   --graduation: #2a2a2c; --chiffre: #2a2a2c;
   --titre: 'Archivo', sans-serif;
@@ -57,24 +57,26 @@ input { font: inherit; -webkit-user-select: text; user-select: text; }
 #liaison i { flex: none; width: 4px; height: 11px; border-radius: 1px; background: var(--ambre); animation: cherche 1.2s steps(2) infinite; }
 #liaison .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .relie #liaison { color: var(--pale); }
-.relie #liaison i { background: var(--laiton-clair); box-shadow: 0 0 6px rgba(217, 188, 134, .6); animation: none; }
+.relie #liaison .txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.relie #liaison i { background: var(--laiton-clair); animation: none; }
 @keyframes cherche { 50% { opacity: .2; } }
 #t-o2 { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
 #t-o2 .cases { display: flex; gap: 2px; }
 #t-o2 .cases i { width: 3px; height: 12px; border-radius: 1px; background: var(--lumiere); opacity: .85; }
 #t-o2 .cases i.eteinte { opacity: .12; }
-#t-o2 output { font: 500 13px 'Atkinson Mono', monospace; color: var(--doux); font-variant-numeric: tabular-nums; }
+#t-o2 output { font: 500 14px 'Atkinson', sans-serif; color: var(--doux); font-variant-numeric: tabular-nums; }
 .o2-bas #t-o2 .cases i { background: var(--ambre); }
 .o2-bas #t-o2 output { color: var(--ambre); }
 
 /* ------------------------------------------------------------------ terminal : composer une phrase */
 .voix-helios { display: flex; align-items: center; gap: 14px; margin: 22px 0 26px; }
-.voix-helios .anneau { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--laiton-clair); box-shadow: 0 0 14px rgba(217, 188, 134, .3), inset 0 0 8px rgba(217, 188, 134, .25); position: relative; }
-.voix-helios .anneau::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: rgba(246, 226, 180, .6); }
-.envoi-en-cours .voix-helios .anneau { animation: souffle 1.6s ease-in-out 3; }
-@keyframes souffle { 50% { transform: scale(1.12); box-shadow: 0 0 24px rgba(217, 188, 134, .55); } }
+.voix-helios .anneau { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--laiton-clair); position: relative; }
+.voix-helios .anneau::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; border: 1px solid rgba(241, 231, 211, .7); }
+
+@keyframes souffle { 50% { transform: scale(1.12); border-color: var(--lumiere); } }
+.envoi-en-cours .voix-helios .anneau::after { animation: souffle 1.6s ease-in-out 3; }
 .voix-helios h2 { margin: 0; font: 300 expanded 21px/1.2 var(--titre); }
-#inters { display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -22px 22px; padding: 4px 22px 10px; scrollbar-width: none; }
+#inters { display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 22px; margin: 0 -22px 22px; padding: 4px 22px 10px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 48px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 48px), transparent 100%); }
 #inters::-webkit-scrollbar { display: none; }
 #inters button { position: relative; flex: none; scroll-snap-align: start; padding-bottom: 8px; font: 200 expanded 34px/1.1 var(--titre); color: var(--pale); transition: color .3s var(--expo); }
 #inters button::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1.5px; background: var(--laiton-clair); transform: scaleX(0); transform-origin: 0 50%; transition: transform .4s var(--expo); }
@@ -87,7 +89,7 @@ input { font: inherit; -webkit-user-select: text; user-select: text; }
 #sujets button[aria-checked=true]::after { transform: scaleX(1); }
 #sujets button.neuf { animation: neuf 2.4s var(--expo); }
 @keyframes neuf { 0% { color: var(--laiton-clair); background: rgba(217, 188, 134, .12); } }
-#terminal h3 { margin: 34px 0 6px; font: 300 expanded 14px var(--titre); color: var(--pale); }
+#terminal h3 { margin: 34px 0 6px; font: 400 expanded 15px var(--titre); color: var(--pale); }
 #hist { list-style: none; margin: 0; padding: 0; }
 #hist li button { width: 100%; text-align: left; padding: 11px 0; border-bottom: 1px solid rgba(241, 231, 211, .06); font-size: 16px; color: var(--doux); }
 #hist li.mauvaise button { color: var(--pale); }
@@ -109,7 +111,7 @@ input { font: inherit; -webkit-user-select: text; user-select: text; }
 .freq { margin: 26px 0 18px; display: flex; align-items: baseline; gap: 10px; }
 #freq { font: 200 expanded 76px/1 var(--titre); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .freq span { font: 300 expanded 16px var(--titre); color: var(--doux); }
-#echelle { position: relative; height: 92px; margin: 0 -22px; overflow: hidden; background: var(--opaline); box-shadow: inset 0 0 30px rgba(150, 110, 50, .4), inset 0 1px 3px rgba(0, 0, 0, .5); touch-action: none; }
+#echelle { position: relative; height: 92px; margin: 0 -22px; overflow: hidden; background: radial-gradient(ellipse 70% 120% at 50% 50%, #f6eddb 0%, #e8d9b8 100%); border-top: 1px solid rgba(0, 0, 0, .4); touch-action: none; }
 #echelle canvas { width: 100%; height: 100%; display: block; }
 #echelle .aiguille { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #a3341f; }
 .doigt #echelle { cursor: ew-resize; }
@@ -119,19 +121,19 @@ input { font: inherit; -webkit-user-select: text; user-select: text; }
 #vu-aiguille { stroke: var(--laiton-clair); stroke-width: 2.2; stroke-linecap: round; transition: transform .12s linear; }
 #vumetre .pivot { fill: var(--laiton); }
 #canal { margin: 10px 0 10px; font: 300 expanded 20px var(--titre); text-align: center; }
-#lecture { min-height: 60px; font: 500 14px/1.6 'Atkinson Mono', monospace; color: var(--doux); white-space: pre-line; text-align: center; }
+#lecture { min-height: 60px; font: italic 400 17px/1.55 'Atkinson', sans-serif; color: var(--doux); white-space: pre-line; text-align: center; text-wrap: balance; }
 #lecture .leg { margin: 0 0 6px; font: 400 15px 'Atkinson', sans-serif; font-style: italic; color: var(--lumiere); white-space: normal; text-align: left; }
 #lecture .leg b { font: 500 13px 'Atkinson Mono', monospace; font-style: normal; color: var(--laiton-clair); margin-right: 6px; }
-#lecture .cache { margin: 12px 0 0; font: 500 15px/1.6 'Atkinson Mono', monospace; color: var(--lumiere); white-space: normal; text-align: left; }
+#lecture .cache { margin: 12px 0 0; font: 400 16px/1.6 'Atkinson', sans-serif; color: var(--lumiere); white-space: normal; text-align: left; }
 #lecture pre { margin: 6px 0 0; font: inherit; }
 #diffuser { width: 100%; margin: 18px 0; padding: 20px 0; border-radius: 4px; background: var(--opaline); color: var(--encre); font: 400 expanded 20px var(--titre); animation: appel 2.4s ease-in-out infinite; }
-@keyframes appel { 50% { box-shadow: 0 0 0 6px rgba(217, 188, 134, .18), 0 0 30px rgba(217, 188, 134, .3); } }
+@keyframes appel { 50% { background: #fbf4e4; } }
 #consigne { margin: 22px 0 8px; font-size: 15px; color: var(--pale); text-align: center; }
 #glisser { display: block; margin: 0 auto; font-size: 15px; color: var(--laiton-clair); text-decoration: underline; text-underline-offset: 5px; }
 
 /* ------------------------------------------------------------------ onglets, notifications, fin */
 #onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; max-width: 520px; margin: 0 auto; padding: 0 22px env(safe-area-inset-bottom); background: var(--nuit); border-top: 1px solid var(--filet); }
-#onglets button { position: relative; flex: 1; padding: 18px 0; font: 300 expanded 16px var(--titre); color: var(--pale); }
+#onglets button { position: relative; flex: 1; padding: 18px 0; font: 400 expanded 16px var(--titre); color: var(--pale); }
 #onglets button::before { content: ''; position: absolute; left: 30%; right: 30%; top: -1px; height: 1.5px; background: var(--laiton-clair); transform: scaleX(0); transition: transform .35s var(--expo); }
 #onglets button[aria-pressed=true] { color: var(--lumiere); }
 #onglets button[aria-pressed=true]::before { transform: scaleX(1); }

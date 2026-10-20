@@ -54,7 +54,7 @@ async function suivant() {
   const helios = v.p === 'HÉLIOS';
   if (helios && !it.opts.sansSignature) { await son.jouer('HEL_S1', 'voix', .9); await attendre(ETUDIANTS ? 500 : 420); }
   if (it.opts.avant) await it.opts.avant();
-  sousTitre(v.p, texte, it.code);
+  if (it.opts.sansSousTitre && !ETUDIANTS) { $('#helios').classList.add('parle'); $('#reponse').classList.add('parle'); } else sousTitre(v.p, texte, it.code);
   const t0 = performance.now();
   await new Promise(r => son.voix(it.code, r));
   const lu = 900 + texte.length * 62;
@@ -75,9 +75,9 @@ function sousTitre(perso, texte, code) {
   if (perso) { const n = el('span', 'qui', perso === 'HÉLIOS' ? 'HÉLIOS' : perso === 'ACHARD' ? 'Achard' : perso === 'FERREIRA' ? 'Ferreira' : perso); if (ETUDIANTS) n.append(el('span', 'code', code)); b.append(n); }
   if (texte) b.append(el('span', 'txt', texte)); else b.append(el('span', 'txt nv', '(' + (D.VOIX[code]?.d || '').toLowerCase() + ')'));
   b.classList.add('on');
-  $('#helios').classList.toggle('parle', perso === 'HÉLIOS');
+  $('#helios').classList.toggle('parle', perso === 'HÉLIOS'); $('#reponse').classList.toggle('parle', perso === 'HÉLIOS');
 }
-function finSousTitre() { $('#sous-titre').classList.remove('on'); $('#helios').classList.remove('parle'); }
+function finSousTitre() { $('#sous-titre').classList.remove('on'); $('#helios').classList.remove('parle'); $('#reponse').classList.remove('parle'); }
 
 // HÉLIOS qui affiche sans parler (signature seule)
 async function afficheHelios(texte, question) {
@@ -90,8 +90,8 @@ function reponseAffichee(q, t) {
   r.replaceChildren();
   if (q) r.append(el('p', 'q', q));
   r.append(el('p', 'r', t));
-  r.classList.add('on');
-  clearTimeout(r.minuteur); r.minuteur = setTimeout(() => r.classList.remove('on'), Math.max(9000, t.length * 95));
+  r.classList.add('on'); document.body.classList.add('rep');
+  clearTimeout(r.minuteur); r.minuteur = setTimeout(() => { r.classList.remove('on'); document.body.classList.remove('rep'); }, Math.max(9000, t.length * 95));
   S.reponses.unshift({ q, t }); S.reponses = S.reponses.slice(0, 60);
 }
 
@@ -113,7 +113,7 @@ function plan(lieu) {
     const b = el('button', 'zone' + (z.vers ? ' sortie' : '')); b.type = 'button'; b.dataset.id = z.id;
     Object.assign(b.style, { left: z.x + '%', top: z.y + '%', width: z.l + '%', height: z.h + '%' });
     b.setAttribute('aria-label', z.nom);
-    b.addEventListener('click', ev => { ev.stopPropagation(); zone(z.id); });
+    b.addEventListener('click', ev => { ev.stopPropagation(); if ($('#panneau').classList.contains('on')) { fermerPanneau(); return; } dernierPoint = z.x + z.l / 2; zone(z.id); });
     b.addEventListener('pointerenter', () => etiquette(z.nom, b));
     b.addEventListener('pointerleave', () => etiquette(null));
     zones.append(b);
@@ -171,9 +171,12 @@ function ajuster() {
 addEventListener('resize', ajuster); ajuster();
 
 // ------------------------------------------------------------------ panneaux (la caméra fait le point sur l'objet)
+let dernierPoint = null;
 function ouvrirPanneau(contenu, cls = '') {
   const p = $('#panneau');
-  p.className = 'panneau ' + cls;
+  // la plaque s'ouvre du côté opposé à l'objet examiné, pour qu'il reste visible à côté
+  const cote = cls.includes('large') ? '' : dernierPoint != null && dernierPoint > 55 ? ' a-gauche' : '';
+  p.className = 'panneau ' + cls + cote;
   p.replaceChildren(contenu);
   const f = el('button', 'fermer', 'Fermer'); f.type = 'button'; f.addEventListener('click', fermerPanneau);
   contenu.append(f);
@@ -244,7 +247,7 @@ function majO2() {
   const cases = Math.ceil(S.o2 / 5);
   const col = $('#o2-cases');
   [...col.children].forEach((c, i) => { c.classList.toggle('eteinte', 19 - i >= cases); });
-  $('#o2-val').textContent = Math.floor(S.o2) + ' %';
+  $('#o2-val').textContent = Math.floor(S.o2) + '\u202f%';
   document.body.classList.toggle('o2-bas', S.o2 < 25);
   if (cases < derniereCase && S.temps > 2) son.jouer('UI_12', 'ui', .8);
   derniereCase = cases;
@@ -408,7 +411,7 @@ async function question(sujet, inter) {
     return;
   }
   const texte = gabarit(r.t);
-  if (r.v) await dire(r.v, { avant: () => reponseAffichee(libelle, texte), texte: D.VOIX[r.v].t });
+  if (r.v) await dire(r.v, { avant: () => reponseAffichee(libelle, texte), texte: D.VOIX[r.v].t, sansSousTitre: true });
   else await dire('HEL_09', { avant: () => reponseAffichee(libelle, texte) });
   (r.sujets || []).forEach(debloquer);
   if (r.drap) poser(r.drap);
@@ -888,7 +891,7 @@ function lobby() {
   $('#reprendre').addEventListener('click', () => commencer(ancien, true));
   $('#sans-tel').addEventListener('change', e => { sansTel = e.target.checked; document.body.classList.toggle('sans-tel', sansTel); });
   try { brancher(); } catch (e) { $('#qr').textContent = 'Liaison téléphone indisponible.'; }
-  const img = urlImage('station_proche') || urlImage('station_mars') || urlImage('radio') || urlImage('cryo'); if (img) $('#accueil').style.setProperty('--fond', `url("${img}")`);
+  const img = urlImage('coursive') || urlImage('station_mars'); if (img) $('#accueil').style.setProperty('--fond', `url("${img}")`);
 }
 async function commencer(etat, reprise) {
   son.demarrer();
@@ -1093,6 +1096,9 @@ window.PSP = {
 };
 
 for (let i = 0; i < 20; i++) $('#o2-cases').append(el('i'));
+// l'interface secondaire s'efface quand personne ne touche à rien
+{ let t = null; const reveil = () => { document.body.classList.remove('repos'); clearTimeout(t); t = setTimeout(() => document.body.classList.add('repos'), 4500); };
+  ['pointermove', 'pointerdown', 'keydown'].forEach(e => addEventListener(e, reveil, { passive: true })); reveil(); }
 atmo.installer($('#decor'));
 lobby();
 prelude();

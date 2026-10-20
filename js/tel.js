@@ -95,7 +95,7 @@ function rendre() {
   if (!E) return;
   const cases = $('#t-o2 .cases'); if (!cases.children.length) for (let i = 0; i < 10; i++) cases.append(el('i'));
   [...cases.children].forEach((c, i) => c.classList.toggle('eteinte', i >= Math.ceil(E.o2 / 10)));
-  $('#t-o2 output').textContent = E.o2 + ' %';
+  $('#t-o2 output').textContent = E.o2 + '\u202f%';
   document.body.classList.toggle('o2-bas', E.o2 < 25);
   if (E.fin) { document.querySelectorAll('.vue').forEach(v => v.classList.remove('on')); $('#fini').classList.add('on'); $('#onglets').hidden = true; $('#envoi').hidden = true; return; }
   // terminal
@@ -228,7 +228,7 @@ function dessinerEchelle() {
   const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
   const px = 46; // pixels par MHz
   const cs = getComputedStyle(document.body);
-  g.strokeStyle = cs.getPropertyValue('--graduation'); g.fillStyle = cs.getPropertyValue('--chiffre'); g.font = '500 15px "Geist Mono", monospace'; g.textAlign = 'center';
+  g.strokeStyle = cs.getPropertyValue('--graduation'); g.fillStyle = cs.getPropertyValue('--chiffre'); g.font = '500 15px "Atkinson Mono", monospace'; g.textAlign = 'center';
   const debut = Math.floor((f - w / 2 / px) * 10), fin = Math.ceil((f + w / 2 / px) * 10);
   for (let k = debut; k <= fin; k++) {
     const v = k / 10; if (v < E.radio.min || v > E.radio.max) continue;
