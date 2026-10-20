@@ -489,7 +489,9 @@ function verifierCircuit(g) {
   return { ok: sortie && !fuite && !mc, sortie, fuite, mc };
 }
 function tuyauterie() {
-  if (!a('panne') || a('air')) { doc('plan'); return; }
+  // hors panne, le pupitre dit simplement l'état du circuit : rien à régler, et rien à confondre avec le plan
+  if (!a('panne')) return ouvrirPanneau(plaque('Pupitre du recyclage', ['Circuit en service. Pression nominale, aucune alarme.', 'Les sections de tuyauterie sont verrouillées tant que le circuit fonctionne.']), 'etroit');
+  if (a('air')) return ouvrirPanneau(plaque('Pupitre du recyclage', ['Circuit rétabli. Débit nominal.', 'Vanne V2 : ' + (S.v2 ? 'ouverte, l\'air part aussi vers le module central.' : 'fermée, module central isolé.')]), 'etroit');
   if (!S.grille) S.grille = grilleInitiale();
   if (S.v2 === undefined) S.v2 = true;
   const d = el('article', 'plaque tuyaux');

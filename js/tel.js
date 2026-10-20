@@ -11,6 +11,7 @@ let E = null; // dernier état reçu de la Station
 let vue = ROLE === 'radio' ? 'radio' : 'terminal';
 
 $('#debut-role').textContent = ROLE === 'radio' ? 'Vous tenez la radio.' : ROLE === 'terminal' ? 'Vous tenez le terminal.' : 'Vous tenez le terminal et la radio.';
+document.title = 'Perséphone · ' + (ROLE === 'radio' ? 'radio' : ROLE === 'terminal' ? 'terminal' : 'terminal et radio');
 $('#role-nom').textContent = ROLE === 'radio' ? 'Radio' : ROLE === 'terminal' ? 'Terminal' : 'Terminal et radio';
 if (!CODE) { $('#debut-err').textContent = 'Ouvrez cette page en scannant le code affiché sur la station.'; $('#activer').disabled = true; }
 
@@ -56,7 +57,7 @@ const client = CODE ? new Client(CODE, {
     if (m.t === 'etat') { E = m; if (m.sons) M = m.sons; rendre(); }
     else if (m.t === 'notif') notif(m.texte);
     else if (m.t === 'envoye') bip('UI_11');
-    else if (m.t === 'autorisation') { $('#auto').hidden = false; notif('HÉLIOS demande une autorisation.'); }
+    else if (m.t === 'autorisation') { montrerAuto(true); bip('UI_10'); if (navigator.vibrate) navigator.vibrate(40); } // la feuille se suffit : pas de notification en double
   },
 }) : null;
 function notif(t) { const n = $('#notif'); n.textContent = t; n.classList.add('on'); bip('UI_10'); if (navigator.vibrate) navigator.vibrate(40); clearTimeout(n.m); n.m = setTimeout(() => n.classList.remove('on'), 3800); }
@@ -70,6 +71,8 @@ $('#activer').addEventListener('click', async () => {
   addEventListener('deviceorientation', orientation, true);
   try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (_) {}
   document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible') { try { await navigator.wakeLock.request('screen'); } catch (_) {} if (ctx) ctx.resume(); } });
+  // la plaque s'allume, puis l'instrument prend tout l'écran
+  $('#debut').classList.add('allume'); await new Promise(r => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1000));
   $('#debut').classList.remove('on');
   document.body.classList.add('actif');
   if (ROLE === 'les-deux') $('#onglets').hidden = false;
@@ -95,42 +98,106 @@ function rendre() {
   if (!E) return;
   const cases = $('#t-o2 .cases'); if (!cases.children.length) for (let i = 0; i < 10; i++) cases.append(el('i'));
   [...cases.children].forEach((c, i) => c.classList.toggle('eteinte', i >= Math.ceil(E.o2 / 10)));
-  $('#t-o2 output').textContent = E.o2 + '\u202f%';
+  $('#t-o2 output').textContent = E.o2 + ' %';
   document.body.classList.toggle('o2-bas', E.o2 < 25);
   if (E.fin) { document.querySelectorAll('.vue').forEach(v => v.classList.remove('on')); $('#fini').classList.add('on'); $('#onglets').hidden = true; $('#envoi').hidden = true; return; }
-  // terminal
+  // terminal : les deux tambours ne se reconstruisent que si leur contenu change, pour garder leur position
   const I = $('#inters');
-  if (!I.children.length) E.inter.forEach(x => { const b = el('button', null, x); b.type = 'button'; b.setAttribute('role', 'radio'); b.addEventListener('click', () => { inter = x; bip('UI_09', .5); majChoix(); }); I.append(b); });
-  const Su = $('#sujets'); const avant = new Set([...Su.querySelectorAll('button')].map(b => b.dataset.id)); const premier = !avant.size; Su.replaceChildren();
-  E.sujets.forEach(s => { const b = el('button', null, s.nom); b.type = 'button'; b.dataset.id = s.id; b.setAttribute('role', 'radio'); b.addEventListener('click', () => { sujet = s.id; bip('UI_09', .5); majChoix(); }); if (!premier && !avant.has(s.id)) b.classList.add('neuf'); Su.append(b); });
+  if (!I.children.length) { E.inter.forEach(x => I.append(rang(x, x, () => { inter = x; }))); installerTambour(I, b => { inter = b.dataset.id; }); }
+  const Su = $('#sujets'); const avant = [...Su.querySelectorAll('button')].map(b => b.dataset.id);
+  if (avant.join() !== E.sujets.map(x => x.id).join()) {
+    const premier = !avant.length; Su.replaceChildren();
+    E.sujets.forEach(x => { const b = rang(x.id, x.nom, () => { sujet = x.id; }); if (!premier && !avant.includes(x.id)) b.classList.add('neuf'); Su.append(b); });
+    if (!Su.dataset.pret) { installerTambour(Su, b => { sujet = b.dataset.id; }); Su.dataset.pret = 1; }
+    if (sujet) { const b = Su.querySelector(`[data-id="${sujet}"]`); if (b) Su.scrollTop = b.offsetTop - Su.clientHeight / 2 + b.offsetHeight / 2; else sujet = null; }
+  }
   const H = $('#hist'); H.replaceChildren();
   [...E.hist].reverse().forEach(h => {
     const li = el('li', h.mauvaise ? 'mauvaise' : ''); const b = el('button', null, h.q); b.type = 'button';
-    if (h.mauvaise) b.append(el('small', null, 'question inutile, oxygène perdu'));
+    b.append(el('small', null, h.mauvaise ? 'inutile · O₂' : 'revoir'));
     b.addEventListener('click', () => client && client.envoyer({ t: 'revoir', cle: h.cle }));
     li.append(b); H.append(li);
   });
-  $('#auto').hidden = !E.attenteAuto;
+  montrerAuto(!!E.attenteAuto);
   majChoix();
   accorder();
 }
+// une ligne de tambour : un bouton qui se choisit au toucher, ou quand on l'amène sous la bande
+function rang(id, texte, choisir) {
+  const b = el('button', null, texte); b.type = 'button'; b.dataset.id = id; b.setAttribute('role', 'radio');
+  b.addEventListener('click', () => { choisir(); verrou = performance.now(); centrer(b); bip('UI_09', .5); vibrer(); majChoix(); });
+  return b;
+}
+let verrou = 0;
+function centrer(b) { const t = b.parentElement; t.scrollTo({ top: b.offsetTop - t.clientHeight / 2 + b.offsetHeight / 2, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+function auCentre(t) { const m = t.scrollTop + t.clientHeight / 2; let best = null, d = 1e9; for (const b of t.children) { const e = Math.abs(b.offsetTop + b.offsetHeight / 2 - m); if (e < d) { d = e; best = b; } } return best; }
+function installerTambour(t, choisir) {
+  let minuterie = null, touche = false;
+  const marquer = () => { const c = auCentre(t); t.querySelectorAll('.centre').forEach(x => x !== c && x.classList.remove('centre')); c && c.classList.add('centre'); return c; };
+  const poser = () => { if (performance.now() - verrou < 700 || !touche) return; const c = marquer(); if (!c) return; const avant = t.querySelector('[aria-checked=true]'); choisir(c); if (c !== avant) { bip('UI_09', .4); vibrer(); } majChoix(); };
+  t.addEventListener('pointerdown', () => { touche = true; }, { passive: true });
+  t.addEventListener('touchstart', () => { touche = true; }, { passive: true });
+  t.addEventListener('wheel', () => { touche = true; }, { passive: true });
+  t.addEventListener('scroll', () => { marquer(); clearTimeout(minuterie); minuterie = setTimeout(poser, 140); }, { passive: true });
+  requestAnimationFrame(marquer);
+}
+function vibrer() { if (navigator.vibrate) navigator.vibrate(8); }
+// la question se lit comme une phrase : chaque mot interrogatif a sa tournure, chaque sujet son article
+const ARTICLES = { helios: ['', 'HÉLIOS'], reveil: ['le', 'réveil'], equipage: ['l\'', 'équipage'], module: ['le', 'module central'], oxygene: ['l\'', 'oxygène'], achard: ['le', 'docteur Achard'], commandante: ['la', 'commandante'], labo: ['le', 'laboratoire'], carotte: ['la', 'carotte 17'], journaux: ['les', 'journaux'], quarantaine: ['la', 'quarantaine'], six: ['le', 'membre six'], ferreira: ['', 'Ferreira'], capsule: ['la', 'capsule'], recyclage: ['le', 'recyclage'], canal: ['le', 'canal privé'], tellus: ['', 'Tellus'], dossier: ['le', 'dossier 17'], contamination: ['la', 'contamination'] };
+const sep = a => a === '' ? '' : a === 'l\'' ? a : a + ' ';
+const avecA = a => ({ le: 'au ', les: 'aux ', la: 'à la ', 'l\'': 'à l\'', '': 'à ' })[a];
+// [début souligné, liaison avant le sujet, fin] ; p : sujet au pluriel
+const TOURNURES = {
+  Qui: (a, p) => ['Qui', ' est lié' + (p ? 's ' : ' ') + avecA(a), ' ?'],
+  Quoi: (a, p) => ['Que', (p ? ' cachent ' : ' cache ') + sep(a), ' ?'],
+  'Où': (a, p) => ['Où', (p ? ' en sont ' : ' en est ') + sep(a), ' ?'],
+  Quand: (a, p) => ['À quand', (p ? ' remontent ' : ' remonte ') + sep(a), ' ?'],
+  Pourquoi: a => ['Pourquoi', ' ' + sep(a), ' ?'],
+  Comment: (a, p) => ['Comment', (p ? ' vont ' : ' va ') + sep(a), ' ?'],
+  Combien: a => ['Combien de temps', ' pour ' + sep(a), ' ?'],
+};
+let rendu = { inter: null, sujet: null };
+function phrase(ap, s) {
+  const art = s ? (ARTICLES[s.id] || ['', s.nom.toLowerCase()]) : ['le', ''];
+  const t = (TOURNURES[inter] || (() => [inter, ' ', ' ?']))(art[0], art[0] === 'les');
+  const mot = (txt, change) => el('span', 'mot' + (change ? ' anim' : ''), txt);
+  const ci = inter !== rendu.inter, cs = (s && s.id) !== rendu.sujet;
+  ap.replaceChildren();
+  if (inter) ap.append(mot(t[0], ci), s ? t[1] : t[1].replace(/\s*(au|aux|à la|à l'|à|le|la|les|l')\s*$/, ' ').replace(/\s+$/, ' '));
+  if (s) { if (!inter) ap.append(el('span', 'trou'), ' … ' + sep(art[0])); ap.append(mot(art[1], cs)); }
+  else ap.append(el('span', 'trou'));
+  ap.append(inter ? t[2] : ' ?');
+  rendu = { inter, sujet: s && s.id };
+}
 function majChoix() {
-  document.querySelectorAll('#inters button').forEach(b => b.setAttribute('aria-checked', b.textContent === inter));
-  document.querySelectorAll('#sujets button').forEach(b => b.setAttribute('aria-checked', b.dataset.id === sujet));
+  document.querySelectorAll('#inters button').forEach(b => b.setAttribute('aria-checked', b.dataset.id === inter));
+  document.querySelectorAll('#sujets button').forEach(b => {
+    b.setAttribute('aria-checked', b.dataset.id === sujet);
+    const pose = inter && E && E.hist.some(h => h.cle === b.dataset.id + '|' + inter);
+    let m = b.querySelector('.marque'); if (pose && !m) b.append(el('span', 'marque', 'posée')); else if (!pose && m) m.remove();
+  });
+  $('#tambours').classList.toggle('choisi', !!(inter && sujet));
+  $('#inters').classList.toggle('choisi', !!inter); $('#sujets').classList.toggle('choisi', !!sujet);
   const s = E && E.sujets.find(x => x.id === sujet);
   const deja = E && E.hist.find(h => h.cle === sujet + '|' + inter);
-  const ap = $('#apercu');
-  ap.textContent = inter && s ? (deja ? deja.q + ' (déjà posée, sans frais)' : inter + '… ' + s.nom.toLowerCase().replace('hélios', 'HÉLIOS') + ' ?') : inter ? inter + '… ?' : 'Choisissez un mot, puis un sujet.';
-  ap.classList.toggle('vide', !inter);
+  const ap = $('#apercu'), note = $('#apercu-note');
+  if (!inter && !s) { ap.replaceChildren('Choisissez un mot, puis un sujet.'); rendu = { inter: null, sujet: null }; }
+  else phrase(ap, s);
+  ap.classList.toggle('vide', !inter && !s);
+  ap.classList.toggle('long', ap.textContent.length > 30);
+  if (!document.body.classList.contains('transmise')) note.textContent = deja ? 'Déjà posée : sans frais, la réponse revient sur la station.' : '';
+  $('#envoyer').textContent = deja ? 'Revoir la réponse' : 'Transmettre';
   $('#envoyer').disabled = !(inter && s && E.enJeu);
 }
 $('#envoyer').addEventListener('click', () => {
   if (!inter || !sujet || !client) return;
   client.envoyer({ t: 'q', sujet, inter });
-  document.body.classList.remove('envoi-en-cours'); void document.body.offsetWidth; document.body.classList.add('envoi-en-cours');
-  inter = null; sujet = null; majChoix();
+  const b = document.body; b.classList.remove('transmise'); void b.offsetWidth; b.classList.add('transmise');
+  $('#apercu-note').textContent = 'Transmise. HÉLIOS répond sur la station.';
+  clearTimeout(b.tr); b.tr = setTimeout(() => { b.classList.remove('transmise'); majChoix(); }, 4200);
 });
-$('#auto').addEventListener('submit', e => { e.preventDefault(); const v = $('#auto-code').value.trim(); if (!v) return; client.envoyer({ t: 'auto', code: v }); $('#auto-code').value = ''; $('#auto').hidden = true; });
+function montrerAuto(oui) { $('#auto').hidden = !oui; document.body.classList.toggle('auto-ouvert', oui); }
+$('#auto').addEventListener('submit', e => { e.preventDefault(); const v = $('#auto-code').value.trim(); if (!v) return; client.envoyer({ t: 'auto', code: v }); $('#auto-code').value = ''; montrerAuto(false); });
 
 // ------------------------------------------------------------------ radio
 let f = 126.0, gyroVu = false, dernierAlpha = null, doigt = false, dernierCran = Math.round(f * 10), accroche = null;
@@ -153,14 +220,14 @@ function regler(nf) {
 }
 function auDoigt() {
   doigt = true; document.body.classList.add('doigt');
-  $('#consigne').textContent = 'Faites glisser l\'échelle du bout du doigt, lentement.';
+  $('#consigne').textContent = 'Faites glisser le spectre du bout du doigt, lentement.';
   $('#glisser').hidden = true;
 }
 $('#glisser').addEventListener('click', auDoigt);
 (() => {
   const e = $('#echelle'); let x0 = null, f0 = 0;
   e.addEventListener('pointerdown', ev => { if (!doigt) return; x0 = ev.clientX; f0 = f; e.setPointerCapture(ev.pointerId); });
-  e.addEventListener('pointermove', ev => { if (x0 == null) return; regler(f0 - (ev.clientX - x0) / 40); });
+  e.addEventListener('pointermove', ev => { if (x0 == null) return; regler(f0 - (ev.clientX - x0) / PX); });
   e.addEventListener('pointerup', () => { x0 = null; });
 })();
 
@@ -174,9 +241,10 @@ function accorder() {
   let proche = null, ecart = 99;
   for (const c of dispo) { const d = Math.abs(c.f - f); if (d < ecart) { ecart = d; proche = c; } }
   const force = proche ? Math.max(0, 1 - ecart / R.largeur) : 0;
-  const vu = $('#vu-aiguille'); const ang = -58 + force * 116 + (Math.random() - .5) * 6 * (1 - force);
-  vu.setAttribute('transform', `rotate(${ang} 100 100)`);
+  niveau(force);
   const tient = proche && ecart <= R.accroche;
+  document.body.classList.toggle('tient', !!tient);
+  if (tient) { const a = $('#echelle .accroche'), w = $('#spectre').clientWidth; a.style.left = (w / 2 + (proche.f - f) * PX - R.accroche * PX) + 'px'; a.style.width = (2 * R.accroche * PX) + 'px'; }
   if (tient && accroche !== proche.id) { accroche = proche.id; bip('RAD_06', .7); if (navigator.vibrate) navigator.vibrate(25); }
   if (!tient) accroche = null;
   // sons
@@ -220,30 +288,89 @@ function brouiller(force) {
 function hash(i) { const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
 $('#diffuser').addEventListener('click', () => { if (client) client.envoyer({ t: 'diffuser' }); $('#diffuser').hidden = true; Object.values(boucles).forEach(b => b.g.gain.setTargetAtTime(0, ctx.currentTime, .3)); });
 
-// échelle de fréquences : graduée comme un vrai récepteur
+// le récepteur : un spectre qui défile (le passé descend), une échelle en dessous, un niveau en cases
+const PX = 52; // pixels par MHz
+function niveau(force) {
+  const N = $('#niveau'); if (!N.children.length) for (let i = 0; i < 24; i++) N.append(el('i'));
+  const n = Math.round(force * 24 + (force < .98 ? Math.random() * 1.6 : 0));
+  [...N.children].forEach((c, i) => c.classList.toggle('on', i < n));
+}
+let spF = null, spT = 0;
 function dessinerEchelle() {
   const c = $('#echelle-c'); if (!c || !E || !E.radio) return;
   const w = c.clientWidth, h = c.clientHeight, dpr = devicePixelRatio || 1;
   if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
   const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-  const px = 46; // pixels par MHz
-  const cs = getComputedStyle(document.body);
-  g.strokeStyle = cs.getPropertyValue('--graduation'); g.fillStyle = cs.getPropertyValue('--chiffre'); g.font = '500 15px "Atkinson Mono", monospace'; g.textAlign = 'center';
-  const debut = Math.floor((f - w / 2 / px) * 10), fin = Math.ceil((f + w / 2 / px) * 10);
+  g.strokeStyle = 'rgba(241, 231, 211, .42)'; g.fillStyle = 'rgba(241, 231, 211, .7)'; g.font = '500 12px "Atkinson Mono", monospace'; g.textAlign = 'center';
+  const debut = Math.floor((f - w / 2 / PX) * 10), fin = Math.ceil((f + w / 2 / PX) * 10);
   for (let k = debut; k <= fin; k++) {
     const v = k / 10; if (v < E.radio.min || v > E.radio.max) continue;
-    const x = w / 2 + (v - f) * px;
-    const L = k % 10 === 0 ? 26 : k % 5 === 0 ? 17 : 9;
-    g.lineWidth = k % 10 === 0 ? 1.4 : 1;
-    g.beginPath(); g.moveTo(x, h - 8); g.lineTo(x, h - 8 - L); g.stroke();
-    if (k % 10 === 0) g.fillText(String(v), x, h - 44);
+    const x = Math.round(w / 2 + (v - f) * PX) + .5;
+    const L = k % 10 === 0 ? 9 : k % 5 === 0 ? 6 : 3;
+    g.lineWidth = 1; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, L); g.stroke();
+    if (k % 10 === 0 && x > 16 && x < w - 16) g.fillText(String(v), x, 27);
   }
-  // repères des canaux connus (affichés sur la console)
-  g.fillStyle = cs.getPropertyValue('--laiton');
-  for (const ch of E.radio.canaux) { if (ch.prive) continue; const x = w / 2 + (ch.f - f) * px; g.fillRect(x - 3, 6, 6, 6); }
 }
+function boucleSpectre(t) {
+  function texBruit(w, h, pas) {
+  // le même bruit de fond que les lignes du spectre (mêmes bandes de temps), pour remplir ce qui n'a pas encore défilé
+  let t = texBruit.c; if (t && t.width >= w && t.height >= h && t.pas === pas) return t;
+  t = texBruit.c = document.createElement('canvas'); t.width = w; t.height = h; t.pas = pas;
+  const g = t.getContext('2d'), img = g.createImageData(w, h), d = img.data;
+  for (let y0 = 0; y0 < h; y0 += pas) {
+    let n = Math.random() * .1; const ligne = new Float32Array(w);
+    for (let x = 0; x < w; x++) { n = n * .82 + Math.random() * Math.random() * .18; ligne[x] = n * .55 + .03; }
+    for (let y = y0; y < Math.min(h, y0 + pas); y++) for (let x = 0; x < w; x++) { const a = ligne[x], i = (y * w + x) * 4; d[i] = 13 + 226 * a; d[i + 1] = 15 + 212 * a; d[i + 2] = 19 + 181 * a; d[i + 3] = 255; }
+  }
+  g.putImageData(img, 0, 0); return t;
+}
+requestAnimationFrame(boucleSpectre);
+  if (vue !== 'radio' || !E || !E.radio || t - spT < 33) return;
+  spT = t;
+  const c = $('#spectre'), w = c.clientWidth, h = c.clientHeight, dpr = Math.min(2, devicePixelRatio || 1);
+  if (!w) return;
+  const g = c.getContext('2d');
+  if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); g.drawImage(texBruit(c.width, c.height, Math.round(2 * dpr)), 0, 0); spF = f; }
+  // l'historique glisse avec l'accord, puis descend d'une ligne
+  const dx = Math.round((spF - f) * PX * dpr); spF = f;
+  const pas = Math.round(2 * dpr);
+  g.globalCompositeOperation = 'copy'; g.drawImage(c, dx, pas); g.globalCompositeOperation = 'source-over';
+  // les colonnes découvertes par l'accord se remplissent de bruit, pas d'un aplat
+  if (dx) { const bruit = texBruit(c.width, c.height, Math.round(2 * dpr)), l = Math.min(Math.abs(dx), c.width), sx = Math.floor(Math.random() * (c.width - l + 1)); g.drawImage(bruit, sx, 0, l, c.height, dx > 0 ? 0 : c.width - l, 0, l, c.height); }
+  // la ligne du présent, en haut
+  const R = E.radio, img = g.createImageData(c.width, pas), d = img.data;
+  const ligne = boucleSpectre.l && boucleSpectre.l.length === c.width ? boucleSpectre.l : (boucleSpectre.l = new Float32Array(c.width));
+  let n = Math.random() * .1;
+  for (let x = 0; x < c.width; x++) {
+    const v = f + (x / dpr - w / 2) / PX;
+    // bruit de fond corrélé en fréquence : des lignes de temps texturées, pas de la neige
+    n = n * .82 + Math.random() * Math.random() * .18;
+    let a = n * .55 + .03;
+    for (const ch of R.canaux) {
+      if (ch.prive && !R.ampli) continue;
+      const e = (v - ch.f) / (ch.prive ? .07 : .11);
+      const fort = ch.prive ? (Math.abs(f - ch.f) < .8 ? .55 : .12) : .85;
+      a += fort * Math.exp(-e * e) * (.75 + .25 * Math.random());
+    }
+    a = Math.min(1, a); ligne[x] = a;
+    for (let y = 0; y < pas; y++) { const k = (y * c.width + x) * 4; d[k] = 239; d[k + 1] = 227; d[k + 2] = 200; d[k + 3] = a * 255; }
+  }
+  // le fond nuit sous la ligne, puis la ligne
+  g.fillStyle = '#0d0f13'; g.fillRect(0, 0, c.width, pas);
+  const tmp = boucleSpectre.t || (boucleSpectre.t = document.createElement('canvas')); tmp.width = c.width; tmp.height = pas; tmp.getContext('2d').putImageData(img, 0, 0);
+  g.drawImage(tmp, 0, 0);
+  // la trace du spectre, au-dessus : plancher de bruit et pics
+  const tr = $('#trace'), tw = tr.clientWidth, th = tr.clientHeight;
+  if (tr.width !== Math.round(tw * dpr)) { tr.width = Math.round(tw * dpr); tr.height = Math.round(th * dpr); }
+  const q = tr.getContext('2d'); q.setTransform(1, 0, 0, 1, 0, 0); q.clearRect(0, 0, tr.width, tr.height);
+  const lis = boucleSpectre.lis && boucleSpectre.lis.length === c.width ? boucleSpectre.lis : (boucleSpectre.lis = Float32Array.from(ligne));
+  q.beginPath();
+  for (let x = 0; x < c.width; x += 2) { lis[x] = lis[x] * .7 + ligne[x] * .3; const y = tr.height - 3 * dpr - lis[x] * (tr.height - 8 * dpr); x ? q.lineTo(x, y) : q.moveTo(x, y); }
+  q.strokeStyle = 'rgba(239, 227, 200, .9)'; q.lineWidth = 1.2 * dpr; q.stroke();
+  q.lineTo(tr.width, tr.height); q.lineTo(0, tr.height); q.closePath(); q.fillStyle = 'rgba(239, 227, 200, .07)'; q.fill();
+}
+requestAnimationFrame(boucleSpectre);
 addEventListener('resize', dessinerEchelle);
-(() => { const G = $('#graduations'); for (let i = 0; i <= 10; i++) { const a = (-58 + i * 11.6) * Math.PI / 180; const x1 = 100 + Math.sin(a) * 74, y1 = 100 - Math.cos(a) * 74, x2 = 100 + Math.sin(a) * (i % 5 ? 66 : 60), y2 = 100 - Math.cos(a) * (i % 5 ? 66 : 60); const l = document.createElementNS('http://www.w3.org/2000/svg', 'line'); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); G.append(l); } })();
 
 // interface de test
 window.TEL = { regler: v => regler(v), etat: () => E, f: () => f, auDoigt };

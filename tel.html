@@ -11,52 +11,56 @@
 <link rel="stylesheet" href="css/tel.css">
 </head>
 <body>
-<div id="fond" aria-hidden="true"></div>
 <main id="app">
   <section id="debut" class="vue on">
-    <div class="debut-image" aria-hidden="true"></div>
-    <div class="debut-texte">
-      <img src="insigne.svg" alt="" width="76" height="76">
-      <h1>Perséphone</h1>
-      <p id="debut-role"></p>
-      <button id="activer" type="button">Activer l'instrument</button>
+    <div class="debut-tete"><img src="insigne.svg" alt="" width="40" height="40"><span>Perséphone</span></div>
+    <div class="plaque-debut"><span class="anneau" aria-hidden="true"></span><p id="debut-role"></p></div>
+    <div class="debut-pied">
       <p class="note">Le son et l'orientation du téléphone servent pendant la partie. Gardez l'écran allumé.</p>
+      <button id="activer" type="button">Activer l'instrument</button>
       <p id="debut-err" class="err" role="alert"></p>
     </div>
   </section>
 
   <header id="tete">
-    <img src="insigne.svg" alt="" width="30" height="30">
+    <img src="insigne.svg" alt="" width="28" height="28">
     <span id="role-nom"></span>
     <span id="liaison" role="status"><i></i><span class="txt">hors liaison</span></span>
     <span id="t-o2" aria-label="Oxygène"><span class="cases"></span><output></output></span>
   </header>
 
   <section id="terminal" class="vue">
-    <div class="voix-helios"><span class="anneau" aria-hidden="true"></span><h2>Une question pour HÉLIOS</h2></div>
-    <div id="inters" role="radiogroup" aria-label="Interrogatif"></div>
-    <div id="sujets" role="radiogroup" aria-label="Sujet"></div>
-    <h3>Déjà posées</h3>
+    <div class="phrase" aria-live="polite">
+      <span class="anneau" aria-hidden="true"></span>
+      <p id="apercu" class="vide">Choisissez un mot, puis un sujet.</p>
+      <p id="apercu-note"></p>
+    </div>
+    <div id="tambours">
+      <div class="tambour" id="inters" role="radiogroup" aria-label="Mot interrogatif"></div>
+      <div class="tambour" id="sujets" role="radiogroup" aria-label="Sujet"></div>
+      <span class="bande" aria-hidden="true"></span>
+    </div>
+    <h2 class="posees">Questions posées</h2>
     <ol id="hist"></ol>
     <div id="envoi">
-      <p id="apercu">Choisissez un mot, puis un sujet.</p>
       <button id="envoyer" type="button" disabled>Transmettre</button>
     </div>
     <form id="auto" hidden autocomplete="off">
       <p>HÉLIOS demande une autorisation.</p>
-      <div class="ligne"><input id="auto-code" inputmode="numeric" maxlength="6" placeholder="Code"><button type="submit">Transmettre</button></div>
+      <div class="ligne"><input id="auto-code" inputmode="numeric" maxlength="6" placeholder="Code" aria-label="Code d'autorisation"><button type="submit">Autoriser</button></div>
     </form>
   </section>
 
   <section id="radio" class="vue">
     <p class="freq"><output id="freq">130,0</output><span>MHz</span></p>
-    <div id="echelle"><canvas id="echelle-c"></canvas><span class="aiguille"></span></div>
-    <svg id="vumetre" viewBox="0 0 200 110" aria-hidden="true">
-      <path d="M20 100 A80 80 0 0 1 180 100" class="arc"/>
-      <g id="graduations"></g>
-      <line id="vu-aiguille" x1="100" y1="100" x2="100" y2="30"/>
-      <circle cx="100" cy="100" r="5" class="pivot"/>
-    </svg>
+    <div id="echelle">
+      <canvas id="trace"></canvas>
+      <canvas id="spectre"></canvas>
+      <span class="accroche" aria-hidden="true"></span>
+      <span class="centre" aria-hidden="true"></span>
+      <canvas id="echelle-c"></canvas>
+    </div>
+    <div id="niveau" aria-hidden="true"></div>
     <p id="canal">Bruit entre les canaux</p>
     <div id="lecture"></div>
     <button id="diffuser" type="button" hidden>Diffuser sur la station</button>
