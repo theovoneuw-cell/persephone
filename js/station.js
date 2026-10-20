@@ -114,7 +114,8 @@ function plan(lieu) {
     Object.assign(b.style, { left: z.x + '%', top: z.y + '%', width: z.l + '%', height: z.h + '%' });
     b.setAttribute('aria-label', z.nom);
     b.addEventListener('click', ev => { ev.stopPropagation(); if ($('#panneau').classList.contains('on')) { fermerPanneau(); return; } dernierPoint = z.x + z.l / 2; zone(z.id); });
-    b.addEventListener('pointerenter', () => etiquette(z.nom, b));
+    b.addEventListener('pointerenter', ev => etiquette(z.nom, b, ev));
+    b.addEventListener('pointermove', ev => etiquette(z.nom, b, ev));
     b.addEventListener('pointerleave', () => etiquette(null));
     zones.append(b);
   }
@@ -124,13 +125,15 @@ function plan(lieu) {
   images[lieu] = p; return p;
 }
 const ETUDIANTS_SANS_VIDEO = false;
-function etiquette(nom, b) {
+function etiquette(nom, b, ev) {
+  // le nom suit le pointeur, juste sous lui : on voit tout de suite ce qu'on survole
   const e = $('#etiquette');
   if (!nom) { e.classList.remove('on'); return; }
   const r = b.getBoundingClientRect(), ec = $('#ecran').getBoundingClientRect(), k = echelle();
+  const x = ev && ev.clientX != null ? ev.clientX : r.left + r.width / 2, y = ev && ev.clientY != null ? ev.clientY : r.top + r.height / 2;
   e.textContent = nom;
-  e.style.left = ((r.left + r.width / 2 - ec.left) / k) + 'px';
-  e.style.top = ((r.top - ec.top) / k + 18) + 'px';
+  e.style.left = Math.min(1820, Math.max(100, (x - ec.left) / k)) + 'px';
+  e.style.top = Math.min(1000, (y - ec.top) / k + 34) + 'px';
   e.classList.add('on');
 }
 let lieuAffiche = null;
@@ -191,6 +194,8 @@ function fermerPanneau() {
   son.jouer('UI_05_2', 'ui', .8);
   if (p.surFermer) { const f = p.surFermer; p.surFermer = null; f(); }
 }
+// un clic dans le décor, hors de la plaque, la referme aussi
+document.addEventListener('click', e => { if (e.target.closest('#decor') && !e.target.closest('.zone')) fermerPanneau(); });
 addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#cine').classList.contains('on')) passerCine(); else fermerPanneau(); } });
 function plaque(titre, lignes, opts = {}) {
   const d = el('article', 'plaque' + (opts.manuscrit ? ' manuscrit' : ''));
@@ -593,11 +598,11 @@ async function zone(id) {
   const n = id.match(/^caisson(\d)$/);
   if (n) return caisson(+n[1]);
   switch (id) {
-    case 'protocole': return doc('protocole');
+    case 'protocole': case 'protocole_droite': return doc('protocole');
     case 'registre_caissons': return registreCaissons();
     case 'porte_cryo':
       if (S.ouverts.includes('coursive')) { son.jouer('MEC_05_1', 'mec'); return aller('coursive'); }
-      return clavier('Sortie du module de cryogénie', 'Protocole de réveil anticipé', 6, async (v, aff) => {
+      return clavier('Sortie du module de cryogénie', 'Protocole de réveil anticipé : saisissez les numéros de tous les caissons ouverts, dans l\'ordre croissant.', 6, async (v, aff) => {
         if (v === D.CODES.porte_cryo[S.n]) {
           son.jouer('UI_07', 'ui'); fermerPanneau(); debloquer('achard');
           await attendre(500); son.jouer('MEC_05_1', 'mec');
@@ -666,7 +671,9 @@ function caisson(i) {
 }
 function registreCaissons() {
   const d = el('article', 'plaque plan-station');
-  d.append(el('h2', null, 'Registre des caissons'));
+  d.append(el('h2', null, 'Borne de la sortie'));
+  D.DOCS.protocole.corps.forEach(t => { const p = el('p'); t.split(/(\*\*[^*]+\*\*)/).forEach(m => { if (m.startsWith('**')) p.append(el('strong', null, m.slice(2, -2))); else if (m) p.append(m); }); d.append(p); });
+  d.append(el('h3', null, 'État des caissons'));
   const l = el('div', 'lieux');
   for (let i = 1; i <= 6; i++) {
     const ouvert = i === 5 || S.eveilles.includes(i);
@@ -891,7 +898,7 @@ function lobby() {
   $('#reprendre').addEventListener('click', () => commencer(ancien, true));
   $('#sans-tel').addEventListener('change', e => { sansTel = e.target.checked; document.body.classList.toggle('sans-tel', sansTel); });
   try { brancher(); } catch (e) { $('#qr').textContent = 'Liaison téléphone indisponible.'; }
-  const img = urlImage('coursive') || urlImage('station_mars'); if (img) $('#accueil').style.setProperty('--fond', `url("${img}")`);
+  const img = urlImage('coursive') || urlImage('station_mars'); if (img) $('#accueil').style.setProperty('--fond', `url("${new URL(img, location.href).href}")`);
 }
 async function commencer(etat, reprise) {
   son.demarrer();
@@ -911,7 +918,7 @@ async function commencer(etat, reprise) {
 
 // ------------------------------------------------------------------ préchargement : la station dérive au-dessus de Mars
 function etoiles(canvas) {
-  // trois plans d'étoiles qui glissent à des vitesses différentes : la profondeur de l'espace
+  // des étoiles fixes qui scintillent doucement
   const g = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
   let graine = 17; const alea = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
   const plans = [[.06, 160, .9], [.16, 70, 1.4], [.4, 22, 2.2]].map(([v, n, taille]) => ({ v, taille, pts: Array.from({ length: n }, () => ({ x: alea() * W, y: alea() * H, b: .3 + alea() * .7, ph: alea() * 6 })) }));
@@ -921,7 +928,6 @@ function etoiles(canvas) {
     if (!actif) return;
     const t = (now - t0) / 1000; g.clearRect(0, 0, W, H);
     for (const p of plans) for (const e of p.pts) {
-      if (!reduit) { e.x -= p.v * vite; e.y += p.v * vite * .18; if (e.x < -4) e.x += W + 8; if (e.y > H + 4) e.y -= H + 8; }
       g.fillStyle = `rgba(240,236,228,${e.b * (.75 + .25 * Math.sin(t * 1.3 + e.ph))})`;
       if (vite > 2) { g.fillRect(e.x, e.y, p.taille * vite * 1.5, p.taille * .8); } else { g.beginPath(); g.arc(e.x, e.y, p.taille * .55, 0, 6.283); g.fill(); }
     }
@@ -932,7 +938,7 @@ function etoiles(canvas) {
 }
 async function prelude() {
   const pr = $('#prelude'), ligne = $('#prelude-ligne');
-  const ext = urlImage('station_mars'); if (ext) pr.style.setProperty('--fond-prelude', `url("${ext}")`);
+  const ext = urlImage('station_mars'); if (ext) pr.style.setProperty('--fond-prelude', `url("${new URL(ext, location.href).href}")`);
   const ciel = etoiles($('#etoiles'));
   const fonds = M.imgs.map(urlImage).filter(Boolean);
   const sons = ETUDIANTS ? [] : ['AMB_00', 'AMB_01', 'HEL_S1', 'HEL_S2', 'O2_1', 'MUS_01', 'CIN_00_2J', 'CIN_00_3J', 'CIN_00_4J'].filter(c => M.sons.includes(c)).map(c => RACINE + 'media/' + M.dossier + '/' + c + '.mp3');
@@ -949,9 +955,9 @@ async function prelude() {
   $('#entrer').addEventListener('click', () => {
     son.demarrer();
     son.boucle('amb', 'AMB_00', 'amb', .8, 5);
-    pr.classList.add('rejoint'); ciel.accelerer();
-    setTimeout(() => { pr.classList.add('fini'); document.body.classList.add('ouvert'); }, 2200);
-    setTimeout(() => { pr.hidden = true; ciel.arreter(); }, 4200);
+    pr.classList.add('rejoint');
+    setTimeout(() => { pr.classList.add('fini'); document.body.classList.add('ouvert'); }, 1900);
+    setTimeout(() => { pr.hidden = true; ciel.arreter(); }, 3800);
   }, { once: true });
 }
 
@@ -976,9 +982,9 @@ function cinematique(nom) {
       const f = el('div', 'plan-cine ' + (p.mvt || 'lent'));
       const v = urlVideo(p.src), im = urlImage(p.src);
       if (v) { const x = el('video'); x.src = v; x.muted = true; x.playsInline = true; x.autoplay = true; f.append(x); x.play().catch(() => {}); }
-      else if (im) { const x = el('img'); x.src = im; x.alt = ''; f.append(x); }
+      else if (im) { const x = el('img'); x.src = im; x.alt = ''; if (p.cadre) { const r = el('div', 'recadre'); r.style.setProperty('--ox', p.cadre.x + '%'); r.style.setProperty('--oy', p.cadre.y + '%'); r.style.setProperty('--z', p.cadre.z); r.append(x); f.append(r); } else f.append(x); }
       else f.classList.add('noir');
-      f.style.setProperty('--d', p.duree + 's');
+      f.style.setProperty('--d', p.duree + 's'); if (p.filtre) f.classList.add(p.filtre);
       cadre.append(f); requestAnimationFrame(() => f.classList.add('on'));
       setTimeout(() => { [...cadre.children].slice(0, -2).forEach(x => x.remove()); }, 3000);
     }, p.t * 1000)));
@@ -1096,6 +1102,9 @@ window.PSP = {
 };
 
 for (let i = 0; i < 20; i++) $('#o2-cases').append(el('i'));
+function reperer() { document.body.classList.add('reperer'); clearTimeout(reperer.t); reperer.t = setTimeout(() => document.body.classList.remove('reperer'), 2600); }
+$('#reperer').addEventListener('click', reperer);
+addEventListener('keydown', e => { if ((e.key === 'r' || e.key === 'R') && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !$('#panneau').classList.contains('on')) reperer(); });
 // l'interface secondaire s'efface quand personne ne touche à rien
 { let t = null; const reveil = () => { document.body.classList.remove('repos'); clearTimeout(t); t = setTimeout(() => document.body.classList.add('repos'), 4500); };
   ['pointermove', 'pointerdown', 'keydown'].forEach(e => addEventListener(e, reveil, { passive: true })); reveil(); }

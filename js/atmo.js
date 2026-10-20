@@ -4,7 +4,7 @@
 export const ATMO = {
   cryo: { poussiere: 34, brume: { mode: 'sol', opacite: .5, teinte: [190, 215, 240], vitesse: .5 },
     lueurs: [{ x: 21, y: 56, r: 13, c: [170, 210, 255], pouls: 7 }, { x: 32, y: 53, r: 8, c: [170, 210, 255], pouls: 8.5 }, { x: 68, y: 52, r: 8, c: [170, 210, 255], pouls: 9.5 }, { x: 80, y: 58, r: 13, c: [170, 210, 255], pouls: 7.5 }, { x: 50, y: 44, r: 17, c: [255, 225, 180], pouls: 12 }] },
-  coursive: { poussiere: 40, brume: { mode: 'air', opacite: .1, teinte: [255, 236, 205], vitesse: .35 }, vacille: [{ x: 48.5, y: 30.5, l: 3, h: 3 }], lueurs: [{ x: 90, y: 45, r: 18, c: [255, 150, 110], pouls: 14 }] },
+  coursive: { poussiere: 40, brume: { mode: 'air', opacite: .1, teinte: [255, 236, 205], vitesse: .35 }, vacille: [{ x: 49.1, y: 32.2, l: 1.85, h: .78, halo: { x: 50, y: 50, r: 24 } }], lueurs: [{ x: 90, y: 45, r: 18, c: [255, 150, 110], pouls: 14 }] },
   infirmerie: { poussiere: 24, brume: { mode: 'air', opacite: .07, teinte: [235, 240, 255], vitesse: .25 }, lueurs: [{ x: 70, y: 40, r: 16, c: [190, 220, 255], pouls: 11 }, { x: 30, y: 35, r: 11, c: [140, 255, 190], pouls: 4.2 }, { x: 64, y: 75, r: 7, c: [140, 230, 255], pouls: 7 }] },
   machines: { poussiere: 50, brume: { mode: 'sol', opacite: .22, teinte: [225, 232, 240], vitesse: .5 }, lueurs: [{ x: 22.5, y: 46, r: 9, c: [255, 160, 70], pouls: 2.2 }, { x: 51, y: 50, r: 14, c: [150, 230, 255], pouls: 6 }, { x: 70, y: 40, r: 10, c: [150, 220, 255], pouls: 8 }] },
   radio: { poussiere: 26, brume: { mode: 'air', opacite: .07, teinte: [255, 235, 210], vitesse: .2 }, lueurs: [{ x: 31, y: 54, r: 9, c: [150, 255, 200], pouls: 4.3 }, { x: 48, y: 54, r: 8, c: [150, 180, 255], pouls: 6.1 }, { x: 74, y: 34, r: 9, c: [150, 255, 200], pouls: 5.2 }, { x: 45, y: 33, r: 20, c: [255, 150, 110], pouls: 17 }] },
@@ -92,13 +92,19 @@ function boucle(now) {
       gr.addColorStop(0, `rgba(${g.c},${.16 * p})`); gr.addColorStop(1, `rgba(${g.c},0)`);
       ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = gr; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.globalCompositeOperation = 'source-over';
     }
-    // tubes qui vacillent
+    // tubes qui vacillent : de longues périodes stables, puis une courte rafale de coupures, comme un néon fatigué
     for (const v of lieu.vacille || []) {
-      const s = Math.sin(t * 13.7 + v.x) * Math.sin(t * 7.3) > .55 || (t % 6.1 < .12);
-      if (s) {
-        const cx = (v.x + v.l / 2) / 100 * L, cy = (v.y + v.h / 2) / 100 * H, rx = v.l / 100 * L * .7;
-        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx); g.addColorStop(0, 'rgba(6,6,8,.6)'); g.addColorStop(1, 'rgba(6,6,8,0)');
-        ctx.save(); ctx.translate(cx, cy); ctx.scale(1, v.h / v.l * 1.4); ctx.translate(-cx, -cy); ctx.fillStyle = g; ctx.fillRect(cx - rx, cy - rx, rx * 2, rx * 2); ctx.restore();
+      const cycle = 9.4, u = (t + v.x) % cycle, n = Math.floor((t + v.x) / cycle);
+      const rafale = .55 + (n * 7919 % 5) * .08;
+      const coupe = u < rafale && Math.sin(u * 57 + n) * Math.sin(u * 23) > -.1;
+      if (coupe) {
+        // la lumière qu'il répandait baisse un peu tout autour
+        const h = v.halo, hx = h.x / 100 * L, hy = h.y / 100 * H, hr = h.r / 100 * L;
+        const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr); g.addColorStop(0, 'rgba(8,8,10,.16)'); g.addColorStop(1, 'rgba(8,8,10,0)');
+        ctx.fillStyle = g; ctx.fillRect(hx - hr, hy - hr, hr * 2, hr * 2);
+        // le tube éteint : gris tiède, à sa place exacte
+        const x = v.x / 100 * L, y = v.y / 100 * H, w = v.l / 100 * L, hh = v.h / 100 * H;
+        ctx.fillStyle = 'rgba(138,128,112,.92)'; ctx.fillRect(x, y, w, hh);
       }
     }
     // poussière dans la lumière

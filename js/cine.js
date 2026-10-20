@@ -11,9 +11,10 @@ export const CINE = {
       duree: 75, audio: 'CIN_00_' + n + 'J',
       plans: [
         { t: 0, src: 'noir', duree: 8 },
-        { t: 7, src: 'cin00_givre', duree: 16, mvt: 'paupieres' },
-        { t: 22, src: 'cin00_couvercle', duree: 13, mvt: 'leve' },
-        { t: 34, src: 'cin00_baie', duree: 15, mvt: 'recule' },
+        // tous les plans de la baie sont pris dans le décor du jeu : même pièce, mêmes caissons
+        { t: 7, src: 'cryo', cadre: { x: 22, y: 60, z: 3.2 }, duree: 16, mvt: 'paupieres' },
+        { t: 22, src: 'cryo', cadre: { x: 82, y: 42, z: 2.3 }, duree: 13, mvt: 'leve' },
+        { t: 34, src: 'cryo', cadre: { x: 50, y: 55, z: 1.15 }, duree: 15, mvt: 'recule' },
         { t: 48, src: 'station_mars', duree: 13, mvt: 'lent' },
         { t: 60, src: 'cryo', duree: 16, mvt: 'avance' },
       ],
@@ -38,8 +39,8 @@ export const CINE = {
     plans: [
       { t: 0, src: 'sas', duree: 18, mvt: 'avance' },
       { t: 16, src: 'cinA_capsule', duree: 20, mvt: 'lent' },
-      { t: 34, src: 'cinA_depart', duree: 24, mvt: 'recule' },
-      { t: 56, src: 'cinA_terre', duree: 24, mvt: 'lent' },
+      { t: 34, src: 'station_mars', cadre: { x: 46, y: 40, z: 1.8 }, duree: 24, mvt: 'recule' },
+      { t: 56, src: 'station_mars', duree: 24, mvt: 'recule', filtre: 'sombre' },
       { t: 78, src: 'noir', duree: 12 },
     ],
     repliques: [
@@ -59,9 +60,9 @@ export const CINE = {
     plans: [
       { t: 0, src: 'sas', duree: 12, mvt: 'lent' },
       { t: 11, src: 'sas_vide', duree: 9, mvt: 'lent' },
-      { t: 18, src: 'cinB_coursive', duree: 22, mvt: 'recule' },
+      { t: 18, src: 'coursive', duree: 22, mvt: 'recule', filtre: 'sombre' },
       { t: 38, src: 'radio', duree: 18, mvt: 'lent' },
-      { t: 54, src: 'cinB_station', duree: 26, mvt: 'recule' },
+      { t: 54, src: 'station_mars', duree: 26, mvt: 'recule', filtre: 'crepuscule' },
       { t: 80, src: 'noir', duree: 10 },
     ],
     repliques: [

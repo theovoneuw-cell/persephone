@@ -24,7 +24,10 @@
   <button id="lieu-nom" type="button" title="Plan de la station"></button>
 
   <div id="helios" aria-hidden="true"><span class="anneau"></span></div>
-  <button id="journal-helios" type="button" title="Ce qu'HÉLIOS a affiché">Réponses</button>
+  <div id="outils-coin"><div class="outils-locaux">
+    <button id="btn-terminal" type="button">Terminal</button>
+    <button id="btn-radio" type="button">Radio</button>
+  </div><button id="reperer" type="button" title="Touche R">Repérer</button><button id="journal-helios" type="button" title="Ce qu'HÉLIOS a affiché">Réponses</button></div>
   <div id="reponse" aria-live="polite"></div>
   <p id="sous-titre" aria-live="polite"></p>
 
@@ -37,10 +40,7 @@
     </div>
   </section>
 
-  <div class="outils-locaux">
-    <button id="btn-terminal" type="button">Terminal</button>
-    <button id="btn-radio" type="button">Radio</button>
-  </div>
+
 
   <div id="etiquette" aria-hidden="true"></div>
   <div id="toast" role="status"></div>
