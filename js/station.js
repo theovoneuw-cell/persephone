@@ -666,9 +666,9 @@ function caisson(i) {
   if (i === 1) { lignes = ['Occupé. Commandante Irène Vasseur.', 'Sommeil stable. Réveil impossible : défaut du circuit de réanimation.']; debloquer('commandante'); }
   else if (i === 5) { lignes = ['Ouvert de l\'intérieur. Vide.', 'Dr Samuel Achard, médecine.', 'Réveil : il y a 21 jours, à 03 h 10. Aucun retour enregistré.']; if (S.ouverts.includes('coursive')) debloquer('achard'); }
   else if (eveille) {
-    lignes = ['Ouvert. Membre d\'équipage ' + NOMBRES[i] + ', ' + role.toLowerCase() + '.', 'Réveil : il y a ' + Math.max(1, Math.round(S.temps / 60)) + ' min.', '**Code d\'autorisation individuel : ' + D.CODES_PERSO[i] + '**'];
+    lignes = ['Ouvert. Membre d\'équipage ' + NOMBRES[i] + ', ' + role.toLowerCase() + '.', D.FICHES[i], 'Réveil : il y a ' + Math.max(1, Math.round(S.temps / 60)) + ' min.', '**Code d\'autorisation individuel : ' + D.CODES_PERSO[i] + '**'];
     if (i === 6) { lignes.push('Journal des capteurs · jour 3, 02 h 51 · taux anormaux · alerte acquittée par S. Achard.'); debloquer('six'); }
-  } else lignes = ['Occupé. Membre d\'équipage ' + NOMBRES[i] + ', ' + role.toLowerCase() + '.', 'Sommeil normal. Réveil prévu dans 21 jours.'];
+  } else lignes = ['Occupé. Membre d\'équipage ' + NOMBRES[i] + ', ' + role.toLowerCase() + '.', ...(D.FICHES[i] ? [D.FICHES[i]] : []), 'Sommeil normal. Réveil prévu dans 21 jours.'];
   ouvrirPanneau(plaque('Caisson ' + i, lignes), 'etroit caisson');
 }
 function registreCaissons() {
@@ -764,6 +764,7 @@ function controleBio() {
         debloquer('contamination');
         await attendre(1800);
         await dire('ACH_NV02');
+        await dire('ACH_I07', { pause: 900 });
         await dire('ACH_I04', { pause: 1200 });
         await dire('HEL_24');
         await dire('HEL_25');
