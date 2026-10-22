@@ -65,9 +65,10 @@ function notif(t) { const n = $('#notif'); n.textContent = t; n.classList.add('o
 // ------------------------------------------------------------------ démarrage
 $('#activer').addEventListener('click', async () => {
   audio();
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    try { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') auDoigt(); } catch (_) { auDoigt(); }
-  }
+  // iOS : une seule autorisation « mouvement et orientation », demandée par l'une ou l'autre porte
+  const P = [window.DeviceMotionEvent, window.DeviceOrientationEvent].find(c => c && typeof c.requestPermission === 'function');
+  if (P) { try { const r = await P.requestPermission(); if (r !== 'granted') auDoigt(); } catch (_) { auDoigt(); } }
+  addEventListener('devicemotion', mouvement, true);
   addEventListener('deviceorientation', orientation, true);
   try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (_) {}
   document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible') { try { await navigator.wakeLock.request('screen'); } catch (_) {} if (ctx) ctx.resume(); } });
@@ -201,19 +202,41 @@ $('#auto').addEventListener('submit', e => { e.preventDefault(); const v = $('#a
 
 // ------------------------------------------------------------------ radio
 let f = 126.0, gyroVu = false, dernierAlpha = null, doigt = false, dernierCran = Math.round(f * 10), accroche = null;
-function orientation(e) {
-  if (e.alpha == null || doigt) return;
+let fr = f, parGyro = false, dernierT = null; // fr : l'accord brut, avant l'aimant des canaux
+// le gyroscope seul (vitesse de rotation), sans la boussole qui saute dès qu'on incline le téléphone
+function mouvement(e) {
+  const r = e.rotationRate; if (!r || r.alpha == null || doigt) return;
+  gyroVu = parGyro = true;
+  const dt = dernierT == null ? 0 : Math.min(.1, (e.timeStamp - dernierT) / 1000); dernierT = e.timeStamp;
+  // tourner à plat (sens horaire) ou incliner vers la droite : la fréquence monte
+  tourner(-r.alpha + (r.gamma || 0), dt);
+}
+// lent = fin (environ 35° par MHz), vif = rapide (5° par MHz) : le geste choisit la précision
+function tourner(v, dt) {
+  const s = Math.abs(v); if (s < 4 || !dt) return;
+  regler(fr + Math.sign(v) * s * dt * (1 + Math.pow(s / 60, 1.6)) / 40);
+}
+function orientation(e) { // repli quand le téléphone ne donne pas la vitesse de rotation
+  if (e.alpha == null || doigt || parGyro) return;
   gyroVu = true;
   if (dernierAlpha == null) { dernierAlpha = e.alpha; return; }
   let d = e.alpha - dernierAlpha; if (d > 180) d -= 360; if (d < -180) d += 360;
   dernierAlpha = e.alpha;
-  if (Math.abs(d) < .05) return;
-  regler(f - d / 12);
+  if (Math.abs(d) < .3) return;
+  regler(fr - d / 30);
+}
+// les canaux attirent l'aiguille : à l'approche, l'accord ralentit puis se pose dessus
+const AIMANT = .45;
+function aimant(v) {
+  const R = E.radio;
+  for (const c of R.canaux) { if (c.prive && !R.ampli) continue; const o = v - c.f; if (Math.abs(o) < AIMANT) return c.f + o * (o / AIMANT) ** 2; }
+  return v;
 }
 function regler(nf) {
   if (!E || !E.radio) return;
   const R = E.radio;
-  f = Math.min(R.max, Math.max(R.min, nf));
+  fr = Math.min(R.max, Math.max(R.min, nf));
+  f = aimant(fr);
   const cran = Math.round(f * 10);
   if (cran !== dernierCran && vue === 'radio') { if (!etudiants()) bip('MEC_11', .35); dernierCran = cran; }
   accorder();
@@ -226,7 +249,7 @@ function auDoigt() {
 $('#glisser').addEventListener('click', auDoigt);
 (() => {
   const e = $('#echelle'); let x0 = null, f0 = 0;
-  e.addEventListener('pointerdown', ev => { if (!doigt) return; x0 = ev.clientX; f0 = f; e.setPointerCapture(ev.pointerId); });
+  e.addEventListener('pointerdown', ev => { if (!doigt) return; x0 = ev.clientX; f0 = fr; e.setPointerCapture(ev.pointerId); });
   e.addEventListener('pointermove', ev => { if (x0 == null) return; regler(f0 - (ev.clientX - x0) / PX); });
   e.addEventListener('pointerup', () => { x0 = null; });
 })();
