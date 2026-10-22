@@ -845,7 +845,8 @@ function etatPour(role) {
     t: 'etat', role, etudiants: ETUDIANTS, o2: Math.floor(S ? S.o2 : 100), enJeu: !!(S && S.lieu && !S.fin && demarre),
     sujets: S ? S.sujets.map(k => ({ id: k, nom: D.SUJETS[k].nom })) : [], inter: D.INTERROGATIFS,
     hist: S ? S.hist.map(h => ({ cle: h.cle, q: h.q, mauvaise: !!h.mauvaise })) : [],
-    radio: S ? { ampli: a('ampli'), phase: a('air') ? 'apres' : a('panne') ? 'panne' : 'avant', trouve: a('fer05'), canaux: D.RADIO.canaux, min: D.RADIO.min, max: D.RADIO.max, largeur: D.RADIO.largeur, accroche: D.RADIO.accroche, telemetrie: D.TELEMETRIE, sons: D.SONS, prive: D.VOIX.FER_05.t } : null,
+    // la radio capte dès qu'elle est reliée, avant même le départ : sans état de partie, rien d'amplifié, phase « avant »
+    radio: { ampli: !!S && a('ampli'), phase: S && a('air') ? 'apres' : S && a('panne') ? 'panne' : 'avant', trouve: !!S && a('fer05'), canaux: D.RADIO.canaux, min: D.RADIO.min, max: D.RADIO.max, largeur: D.RADIO.largeur, accroche: D.RADIO.accroche, telemetrie: D.TELEMETRIE, sons: D.SONS, prive: D.VOIX.FER_05.t },
     attenteAuto, fin: S && S.fin, sons: ETUDIANTS ? null : { sons: M.sons.filter(c => /^(UI_09|UI_10|UI_11|UI_13|MEC_11|RAD_|FER_05_TEL)/.test(c)), dossier: M.dossier },
   };
 }
