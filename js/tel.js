@@ -65,10 +65,9 @@ function notif(t) { const n = $('#notif'); n.textContent = t; n.classList.add('o
 // ------------------------------------------------------------------ démarrage
 $('#activer').addEventListener('click', async () => {
   audio();
-  // iOS : une seule autorisation « mouvement et orientation », demandée par l'une ou l'autre porte
-  const P = [window.DeviceMotionEvent, window.DeviceOrientationEvent].find(c => c && typeof c.requestPermission === 'function');
-  if (P) { try { const r = await P.requestPermission(); if (r !== 'granted') auDoigt(); } catch (_) { auDoigt(); } }
-  addEventListener('devicemotion', mouvement, true);
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') auDoigt(); } catch (_) { auDoigt(); }
+  }
   addEventListener('deviceorientation', orientation, true);
   try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (_) {}
   document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible') { try { await navigator.wakeLock.request('screen'); } catch (_) {} if (ctx) ctx.resume(); } });
@@ -201,30 +200,28 @@ function montrerAuto(oui) { $('#auto').hidden = !oui; document.body.classList.to
 $('#auto').addEventListener('submit', e => { e.preventDefault(); const v = $('#auto-code').value.trim(); if (!v) return; client.envoyer({ t: 'auto', code: v }); $('#auto-code').value = ''; montrerAuto(false); });
 
 // ------------------------------------------------------------------ radio
-let f = 126.0, gyroVu = false, dernierAlpha = null, doigt = false, dernierCran = Math.round(f * 10), accroche = null;
-let fr = f, parGyro = false, dernierT = null; // fr : l'accord brut, avant l'aimant des canaux
-// le gyroscope seul (vitesse de rotation), sans la boussole qui saute dès qu'on incline le téléphone
-function mouvement(e) {
-  const r = e.rotationRate; if (!r || r.alpha == null || doigt) return;
-  gyroVu = parGyro = true;
-  const dt = dernierT == null ? 0 : Math.min(.1, (e.timeStamp - dernierT) / 1000); dernierT = e.timeStamp;
-  // tourner à plat (sens horaire) ou incliner vers la droite : la fréquence monte
-  tourner(-r.alpha + (r.gamma || 0), dt);
-}
-// lent = fin (environ 35° par MHz), vif = rapide (5° par MHz) : le geste choisit la précision
-function tourner(v, dt) {
-  const s = Math.abs(v); if (s < 4 || !dt) return;
-  regler(fr + Math.sign(v) * s * dt * (1 + Math.pow(s / 60, 1.6)) / 40);
-}
-function orientation(e) { // repli quand le téléphone ne donne pas la vitesse de rotation
-  if (e.alpha == null || doigt || parGyro) return;
+let f = 126.0, gyroVu = false, doigt = false, dernierCran = Math.round(f * 10), accroche = null;
+let fr = f, penche = null, plat = true, dernierTick = null; // fr : l'accord brut, avant l'aimant des canaux
+// le téléphone posé à plat dans la main : on le penche à gauche ou à droite, comme un niveau à bulle.
+// Gamma (inclinaison gauche-droite) vient de la gravité : même sens partout, sans boussole.
+function orientation(e) {
+  if (e.gamma == null || doigt) return;
   gyroVu = true;
-  if (dernierAlpha == null) { dernierAlpha = e.alpha; return; }
-  let d = e.alpha - dernierAlpha; if (d > 180) d -= 360; if (d < -180) d += 360;
-  dernierAlpha = e.alpha;
-  if (Math.abs(d) < .3) return;
-  regler(fr - d / 30);
+  const p = Math.abs(e.beta) < 50;
+  if (p !== plat) { plat = p; $('#consigne').textContent = p ? CONSIGNE : 'Posez le téléphone à plat dans la main.'; }
+  const g = plat ? e.gamma : 0;
+  penche = penche == null ? g : penche * .7 + g * .3;
 }
+// à plat = immobile ; un peu penché = l'aiguille avance lentement ; très penché = elle file
+function piloter(t) {
+  requestAnimationFrame(piloter);
+  const dt = dernierTick == null ? 0 : Math.min(.1, (t - dernierTick) / 1000); dernierTick = t;
+  if (penche == null || doigt || vue !== 'radio' || !dt) return;
+  const x = Math.max(0, Math.abs(penche) - 4); if (!x) return;
+  regler(fr + Math.sign(penche) * (.03 * x + .0035 * x * x) * dt);
+}
+requestAnimationFrame(piloter);
+const CONSIGNE = $('#consigne').textContent;
 // les canaux attirent l'aiguille : à l'approche, l'accord ralentit puis se pose dessus
 const AIMANT = .45;
 function aimant(v) {
