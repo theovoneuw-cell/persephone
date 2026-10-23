@@ -4,6 +4,8 @@
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const PREFIXE = 'persephone-2091-';
+// Les relais TURN fournis par défaut avec PeerJS (eu-0/us-0.turn.peerjs.com) n'existent plus : on ne garde que deux STUN.
+const OPTIONS = { debug: 0, config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] } };
 
 export function nouveauCode() {
   const a = new Uint32Array(4); crypto.getRandomValues(a);
@@ -23,7 +25,7 @@ export class Hote {
     this.ouvrir();
   }
   ouvrir() {
-    this.peer = new Peer(PREFIXE + this.code, { debug: 0 });
+    this.peer = new Peer(PREFIXE + this.code, OPTIONS);
     this.peer.on('open', () => this.h.ouvert && this.h.ouvert());
     this.peer.on('error', e => {
       if (e.type === 'unavailable-id') { setTimeout(() => { try { this.peer.destroy(); } catch (_) {} this.ouvrir(); }, 4000); return; }
@@ -65,7 +67,7 @@ export class Client {
   relancer() {
     clearTimeout(this.minuteur);
     if (!this.peer || this.peer.destroyed) {
-      this.peer = new Peer({ debug: 0 });
+      this.peer = new Peer(OPTIONS);
       this.peer.on('open', () => this.appeler());
       this.peer.on('error', e => { if (e.type !== 'peer-unavailable') this.h.coupure && this.h.coupure(); this.plusTard(); });
       this.peer.on('disconnected', () => { try { this.peer.reconnect(); } catch (_) {} });

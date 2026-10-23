@@ -51,7 +51,7 @@ function legende(code, texte) {
 // ------------------------------------------------------------------ liaison
 const client = CODE ? new Client(CODE, {
   presentation: () => ({ role: ROLE }),
-  connecte: () => { $('#liaison .txt').textContent = 'relié à la station'; document.body.classList.add('relie'); },
+  connecte: () => { $('#liaison .txt').textContent = 'relié à la station'; document.body.classList.add('relie'); if (sansLiaison) { clearTimeout(sansLiaison); sansLiaison = null; $('#notif').classList.remove('on'); } },
   coupure: () => { $('#liaison .txt').textContent = 'liaison perdue, reconnexion…'; document.body.classList.remove('relie'); },
   message: m => {
     if (m.t === 'etat') { E = m; if (m.sons) M = m.sons; rendre(); }
@@ -60,6 +60,10 @@ const client = CODE ? new Client(CODE, {
     else if (m.t === 'autorisation') { montrerAuto(true); bip('UI_10'); if (navigator.vibrate) navigator.vibrate(40); } // la feuille se suffit : pas de notification en double
   },
 }) : null;
+// jamais relié au bout de vingt secondes : le réseau bloque sans doute le lien direct (Wi-Fi d'école, d'hôtel…)
+let sansLiaison = client ? setTimeout(() => {
+  const n = $('#notif'); n.textContent = 'Pas de liaison avec la station. Coupez le Wi-Fi du téléphone pour passer en 4G et rechargez la page. Sinon, la station se joue aussi sans téléphone.'; n.classList.add('on');
+}, 20000) : null;
 function notif(t) { const n = $('#notif'); n.textContent = t; n.classList.add('on'); bip('UI_10'); if (navigator.vibrate) navigator.vibrate(40); clearTimeout(n.m); n.m = setTimeout(() => n.classList.remove('on'), 3800); }
 
 // ------------------------------------------------------------------ démarrage
