@@ -164,6 +164,23 @@ input { font: inherit; -webkit-user-select: text; user-select: text; }
 #onglets button::before { content: ''; position: absolute; left: 30%; right: 30%; top: -1px; height: 1.5px; background: var(--laiton-clair); transform: scaleX(0); transition: transform .35s var(--expo); }
 #onglets button[aria-pressed=true] { color: var(--lumiere); }
 #onglets button[aria-pressed=true]::before { transform: scaleX(1); }
+/* contrôle biologique : chaque membre garde le pouce sur la plaque jusqu'à ce que l'anneau se remplisse */
+#bio { position: fixed; inset: 0; z-index: 7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: calc(70px + env(safe-area-inset-top)) var(--gouttiere) calc(90px + env(safe-area-inset-bottom)); background: var(--nuit); text-align: center; animation: arrive .5s var(--expo); }
+#bio[hidden] { display: none; }
+.bio-titre { margin: 0; font: 300 15px var(--titre); font-stretch: 125%; color: var(--pale); }
+#bio-qui { margin: 0; font: 300 30px/1.2 var(--titre); font-stretch: 125%; color: var(--lumiere); }
+#bio-pad { position: relative; width: min(64vw, 260px); aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#bio-pad svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#bio-pad .piste-anneau { fill: rgba(241, 231, 211, .04); stroke: var(--filet); stroke-width: 2; }
+#bio-pad .charge { fill: none; stroke: var(--laiton-clair); stroke-width: 4; stroke-dasharray: 340; stroke-dashoffset: 340; transform: rotate(-90deg); transform-origin: 60px 60px; }
+#bio-pad.appui .charge { stroke-dashoffset: 0; transition: stroke-dashoffset 1.6s linear; }
+#bio-pad .empreinte { fill: none; stroke: var(--doux); stroke-width: 2.4; stroke-linecap: round; transform: translateY(-4px); }
+#bio-pad.appui .empreinte { stroke: var(--laiton-clair); }
+#bio-consigne { margin: 0; max-width: 300px; font-size: 16px; line-height: 1.4; color: var(--doux); }
+#bio-liste { list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+#bio-liste li { padding: 6px 12px; border: 1px solid var(--filet); border-radius: 3px; font: 500 14px var(--mesure); color: var(--pale); }
+#bio-liste li.ok { border-color: var(--laiton-clair); color: var(--lumiere); }
+#bio-liste li.ici { color: var(--lumiere); border-color: var(--lumiere); }
 #notif { position: fixed; left: 12px; right: 12px; top: calc(66px + env(safe-area-inset-top)); z-index: 9; max-width: 496px; margin: 0 auto; padding: 14px 18px; border-radius: 3px; background: var(--opale); color: var(--encre); font-size: 16px; box-shadow: inset 0 0 0 1px var(--laiton), 0 16px 36px -10px #000; opacity: 0; transform: translateY(-10px); transition: opacity .3s, transform .45s var(--expo); pointer-events: none; }
 #notif.on { opacity: 1; transform: none; }
 #fini.on { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80dvh; text-align: center; }

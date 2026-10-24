@@ -39,7 +39,7 @@ export const CINE = {
     plans: [
       { t: 0, src: 'sas', duree: 18, mvt: 'avance' },
       { t: 16, src: 'cinA_capsule', duree: 20, mvt: 'lent' },
-      { t: 34, src: 'station_mars', cadre: { x: 46, y: 40, z: 1.8 }, duree: 24, mvt: 'recule' },
+      { t: 34, src: 'station_proche', duree: 24, mvt: 'recule' },
       { t: 56, src: 'station_mars', duree: 24, mvt: 'recule', filtre: 'sombre' },
       { t: 78, src: 'noir', duree: 12 },
     ],

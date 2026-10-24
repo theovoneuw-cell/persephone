@@ -14,11 +14,12 @@
   <div id="decor"></div>
   <div id="grain" aria-hidden="true"></div>
 
+  <div id="alerte" role="alert"><span class="feu" aria-hidden="true"></span><span id="alerte-txt"></span></div>
   <div id="objectif"><span id="objectif-txt"></span><button id="indice" type="button">Indice</button></div>
 
   <aside id="oxygene" aria-label="Réserve d'oxygène">
     <div id="o2-cases"></div>
-    <p><span class="o2">O<sub>2</sub></span><output id="o2-val">100 %</output></p>
+    <p><span class="o2">O<sub>2</sub></span><output id="o2-val">100 %</output><span id="o2-debit"></span></p>
   </aside>
 
   <button id="lieu-nom" type="button" title="Plan de la station"></button>
@@ -27,7 +28,7 @@
   <div id="outils-coin"><div class="outils-locaux">
     <button id="btn-terminal" type="button">Terminal</button>
     <button id="btn-radio" type="button">Radio</button>
-  </div><button id="reperer" type="button" title="Touche R">Repérer</button><button id="journal-helios" type="button" title="Ce qu'HÉLIOS a affiché">Réponses</button></div>
+  </div><button id="reperer" type="button" title="Touche R">Repérer</button><button id="journal-helios" type="button" title="Ce qu'HÉLIOS a affiché">Réponses</button><button id="aide" type="button" title="Comment jouer">Aide</button></div>
   <div id="reponse" aria-live="polite"></div>
   <p id="sous-titre" aria-live="polite"></p>
 
@@ -81,6 +82,7 @@
     </div>
     <div class="cote">
       <div class="telephones">
+        <p id="consigne-tel" class="consigne-tel"></p>
         <div id="qr"></div>
         <p class="code-ligne">Code de la station <output id="code-station">····</output></p>
       </div>

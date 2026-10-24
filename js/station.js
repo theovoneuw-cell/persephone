@@ -44,28 +44,38 @@ function sauver() { try { localStorage.setItem(CLE_SAUVE, JSON.stringify(S)); } 
 function chargerSauvegarde() { try { const s = JSON.parse(localStorage.getItem(CLE_SAUVE)); return s && !s.fin ? s : null; } catch (_) { return null; } }
 
 // ------------------------------------------------------------------ parole (file d'attente : jamais deux voix à la fois)
-const file = []; let parle = false;
-function dire(code, opts = {}) { return new Promise(res => { file.push({ code, opts, res }); if (!parle) suivant(); }); }
+// dire() se résout sur 'fini', 'coupe' (interrompue en cours) ou 'annule' (retirée de la file avant de commencer)
+const file = []; let parle = false, courant = null;
+function dire(code, opts = {}) { return new Promise(res => { file.push({ code, opts, res }); majPistes(); if (!parle) suivant(); }); }
 async function suivant() {
-  const it = file.shift(); if (!it) { parle = false; return; }
-  parle = true;
+  const it = file.shift(); if (!it) { parle = false; courant = null; majPistes(); return; }
+  parle = true; courant = it;
+  it.stop = new Promise(r => { it.arreter = r; });
+  const att = ms => Promise.race([attendre(ms), it.stop]);
+  majPistes();
   const v = D.VOIX[it.code] || { p: '', t: '' };
   const texte = it.opts.texte || v.t;
   const helios = v.p === 'HÉLIOS';
-  if (helios && !it.opts.sansSignature) { await son.jouer('HEL_S1', 'voix', .9); await attendre(ETUDIANTS ? 500 : 420); }
+  if (helios && !it.opts.sansSignature) { await son.jouer('HEL_S1', 'voix', .9); await att(ETUDIANTS ? 500 : 420); }
   if (it.opts.avant) await it.opts.avant();
   if (it.opts.sansSousTitre && !ETUDIANTS) { $('#helios').classList.add('parle'); $('#reponse').classList.add('parle'); } else sousTitre(v.p, texte, it.code);
   const t0 = performance.now();
-  await new Promise(r => son.voix(it.code, r));
+  if (!it.coupe) await Promise.race([new Promise(r => son.voix(it.code, r)), it.stop]);
   const lu = 900 + texte.length * 62;
   const reste = lu - (performance.now() - t0);
-  if (reste > 0 && (ETUDIANTS || !son.existe(it.code))) await attendre(reste);
-  else await attendre(350);
+  if (reste > 0 && (ETUDIANTS || !son.existe(it.code))) await att(reste);
+  else await att(350);
   if (helios && !it.opts.sansSignature) son.jouer('HEL_S2', 'voix', .9);
   finSousTitre();
-  if (it.opts.apres) await it.opts.apres();
-  await attendre(it.opts.pause ?? 250);
-  it.res(); suivant();
+  if (it.opts.apres && !it.coupe) await it.opts.apres();
+  await attendre(it.coupe ? 150 : it.opts.pause ?? 250);
+  it.res(it.coupe ? 'coupe' : 'fini'); suivant();
+}
+// un journal en cours s'arrête net, ceux qui attendaient leur tour sont retirés
+function couperJournaux() {
+  for (let i = file.length - 1; i >= 0; i--) if (file[i].opts.journal) { const [x] = file.splice(i, 1); x.res('annule'); }
+  if (courant && courant.opts.journal && !courant.coupe) { courant.coupe = true; son.couperVoix(); courant.arreter(); }
+  majPistes();
 }
 let rapide = 1;
 const attendre = ms => new Promise(r => setTimeout(r, ms / rapide));
@@ -259,12 +269,22 @@ function majO2() {
   const niveau = S.o2 > 75 ? 1 : S.o2 > 50 ? 2 : S.o2 > 25 ? 3 : 4;
   if (S.lieu && !S.fin) son.tension(niveau);
   for (const [seuil, code] of [[75, 'HEL_13'], [50, 'HEL_14'], [25, 'HEL_15']]) {
-    if (S.o2 <= seuil && marquer('palier' + seuil)) { son.jouer('ALR_01', 'alarme', .9); dire(code); }
+    if (S.o2 <= seuil && marquer('palier' + seuil)) { son.jouer('ALR_01', 'alarme', .9); eclair(); dire(code); }
   }
+  majAlerte();
   if (S.o2 < 10 && marquer('critique')) { dire('HEL_16'); son.boucle('alarme', 'ALR_02', 'alarme', .45, .5); }
   if (S.o2 <= 0 && !S.fin) finPartie('X');
   envoyerTelephones();
 }
+// tant que l'air est en panne ou bas, l'écran le dit : bandeau, halo rouge, perte par minute
+function majAlerte() {
+  const panne = a('panne') && !a('air') && !S.fin, bas = S.o2 < 25 && !S.fin;
+  const b = $('#alerte');
+  b.classList.toggle('on', panne || bas);
+  $('#alerte-txt').textContent = panne ? 'Alerte · recyclage d\'air en panne · salle des machines' : bas ? 'Alerte · réserve d\'oxygène critique' : '';
+  $('#o2-debit').textContent = panne ? '−' + (BASE_O2 * 120).toFixed(1).replace('.', ',') + '\u202f%/min' : '';
+}
+function eclair() { document.body.classList.remove('eclair'); void document.body.offsetWidth; document.body.classList.add('eclair'); setTimeout(() => document.body.classList.remove('eclair'), 1700); }
 let horloge = null, enPause = false, vitesse = 1;
 function demarrerHorloge() {
   clearInterval(horloge);
@@ -278,6 +298,8 @@ function demarrerHorloge() {
     majO2();
     if (S.temps % 5 === 0) sauver();
     if (S.temps % 47 === 0 && Math.random() < .55) son.jouer('AMB_09', 'amb', .8);
+    // la panne ne se fait pas oublier : l'alarme revient tant que l'air n'est pas réparé
+    if (a('panne') && !a('air') && S.temps % 40 === 0) { son.jouer('ALR_01', 'alarme', .75); eclair(); }
   }, 1000);
 }
 // événements différés, survivant au rechargement
@@ -455,7 +477,7 @@ async function transmission(code) {
 // ------------------------------------------------------------------ panne et tuyauterie
 async function panne() {
   if (a('panne')) return; poser('panne');
-  son.jouer('ALR_01', 'alarme', .9);
+  son.jouer('ALR_01', 'alarme', .9); eclair();
   ambiance();
   await dire('HEL_18');
   debloquer('recyclage');
@@ -508,6 +530,9 @@ function tuyauterie() {
       if (c.t === 'm') { b.classList.add(S.v2 ? 'v-ouverte' : 'v-fermee'); b.title = 'Vanne V2 · module central'; }
       b.style.setProperty('--r', (c.t === 'x' && !c.posee) ? 0 : c.r);
       b.innerHTML = svgTuyau(c);
+      // les trois points fixes portent leur nom dans la grille, flèche dans le sens de l'air
+      const nom = { s: 'Réservoir →', o: '→ Distribution', m: 'V2 · module central' }[c.t];
+      if (nom) b.append(el('span', 'etiq', nom));
       b.addEventListener('click', () => {
         if (c.t === 'm') { S.v2 = !S.v2; son.jouer(S.v2 ? 'MEC_03_1' : 'MEC_03_2', 'mec'); dessiner(); sauver(); return; }
         if (c.t === 's' || c.t === 'o') return;
@@ -568,17 +593,19 @@ function lecteur() {
   const l = el('ol', 'pistes');
   for (const [code, jour] of JOURNAUX) {
     const dispo = jour <= 9 || S.cartes.includes(30) || S.defausse.includes(30) || a('tablette');
-    const li = el('li'); const b = el('button', 'piste'); b.type = 'button'; b.disabled = !dispo;
-    b.append(el('span', 'jour', 'Jour ' + jour), el('span', 'etat', !dispo ? 'non synchronisé' : S.journaux.includes(code) ? 'écouté' : ''));
+    const li = el('li'); const b = el('button', 'piste'); b.type = 'button'; b.disabled = !dispo; b.dataset.code = code;
+    b.append(el('span', 'jour', 'Jour ' + jour), el('span', 'etat', !dispo ? 'non synchronisé' : ''));
+    // un clic lance ce jour et coupe celui qui passe ; un clic sur le jour en cours l'arrête
     b.addEventListener('click', async () => {
-      if (parle) return;
-      son.jouer('MEC_10_1', 'mec');
-      l.querySelectorAll('.piste').forEach(p => p.classList.remove('lit')); b.classList.add('lit');
-      await attendre(400);
-      await dire(code);
-      son.jouer('MEC_10_2', 'mec');
-      b.classList.remove('lit');
-      if (!S.journaux.includes(code)) { S.journaux.push(code); b.querySelector('.etat').textContent = 'écouté'; }
+      const enCours = courant && courant.opts.journal && !courant.coupe && courant.code === code;
+      couperJournaux();
+      son.jouer(enCours ? 'MEC_10_2' : 'MEC_10_1', 'mec');
+      if (enCours) return;
+      const r = await dire(code, { journal: true });
+      if (r === 'annule') return;
+      if (r === 'fini') son.jouer('MEC_10_2', 'mec');
+      if (!S.journaux.includes(code)) S.journaux.push(code);
+      majPistes();
       if (code === 'ACH_J01') { debloquer('labo'); debloquer('carotte'); }
       if (code === 'ACH_J03') debloquer('six');
       if (S.journaux.length >= 2) plusUneFois('FER_02', 8);
@@ -587,7 +614,20 @@ function lecteur() {
     li.append(b); l.append(li);
   }
   d.append(l);
+  d.append(el('p', 'sous', 'Touchez un jour pour l\'écouter. Un autre jour coupe celui en cours ; le même jour l\'arrête.'));
   ouvrirPanneau(d, 'etroit');
+  majPistes();
+}
+// l'état de chaque piste suit la file de parole : en lecture, en attente d'une autre voix, écoutée
+function majPistes() {
+  if (!S) return;
+  document.querySelectorAll('.piste[data-code]').forEach(b => {
+    const c = b.dataset.code, e = b.querySelector('.etat');
+    const lit = !!(courant && courant.opts.journal && !courant.coupe && courant.code === c);
+    const attend = file.some(x => x.opts.journal && x.code === c);
+    b.classList.toggle('lit', lit);
+    if (!b.disabled) e.textContent = lit ? 'en lecture' : attend ? 'en attente' : S.journaux.includes(c) ? 'écouté' : '';
+  });
 }
 function plusUneFois(quoi, sec) { if (!fait('prog-' + quoi)) { marquer('prog-' + quoi); plus(sec, quoi); } }
 
@@ -646,7 +686,7 @@ async function zone(id) {
     case 'scanner': return doc('scanner');
     case 'pupitre': return tuyauterie();
     case 'plan': return doc('plan');
-    case 'cuve': return doc('cuve');
+    case 'cuve': return reservoir();
     case 'console': return doc('console');
     case 'ampli':
       if (!a('ampli')) { poser('ampli'); son.jouer('MEC_03_1', 'mec'); sauver(); envoyerTelephones(); debloquer('canal'); }
@@ -670,6 +710,23 @@ function caisson(i) {
     if (i === 6) { lignes.push('Journal des capteurs · jour 3, 02 h 51 · taux anormaux · alerte acquittée par S. Achard.'); debloquer('six'); }
   } else lignes = ['Occupé. Membre d\'équipage ' + NOMBRES[i] + ', ' + role.toLowerCase() + '.', ...(D.FICHES[i] ? [D.FICHES[i]] : []), 'Sommeil normal. Réveil prévu dans 21 jours.'];
   ouvrirPanneau(plaque('Caisson ' + i, lignes), 'etroit caisson');
+}
+// le réservoir : une jauge à aiguille, et ce qui fait baisser l'air
+function reservoir() {
+  const d = el('article', 'plaque reservoir');
+  d.append(el('h2', null, 'Réservoir d\'oxygène'));
+  const angle = -120 + 240 * S.o2 / 100;
+  const g = el('div', 'jauge-o2');
+  g.innerHTML = `<svg viewBox="0 0 200 130" aria-hidden="true"><path d="M27 115 A82 82 0 1 1 173 115" class="arc"/><path d="M27 115 A82 82 0 0 1 36 72" class="arc rouge"/><g transform="rotate(${angle} 100 90)"><path d="M100 90 L100 22" class="aiguille"/><path d="M93 30 L100 14 L107 30 Z" class="pointe"/></g><circle cx="100" cy="90" r="7" class="axe"/></svg>`;
+  g.append(el('output', null, Math.floor(S.o2) + ' %'));
+  d.append(g);
+  const panne = a('panne') && !a('air');
+  const parMin = (BASE_O2 * 60 * (panne ? 2 : 1)).toFixed(1).replace('.', ',');
+  const reste = Math.floor(S.o2 / (BASE_O2 * (panne ? 2 : 1)) / 60);
+  d.append(el('p', panne ? 'alerte' : null, 'Consommation : ' + parMin + ' % par minute' + (panne ? ', le double de la normale : le recyclage est en panne.' : '.') + ' À ce rythme, il reste environ ' + reste + ' minutes d\'air.'));
+  d.append(el('p', 'sous', 'Ce qui coûte de l\'air en plus : une question inutile à HÉLIOS (−1 %), un code ou un assemblage faux (−0,5 %), un indice (−2 %).'));
+  d.append(el('p', 'sous', 'Sur la cuve, une plaque gravée : « Perséphone, mise en service 2071 ».'));
+  ouvrirPanneau(d, 'etroit');
 }
 function registreCaissons() {
   const d = el('article', 'plaque plan-station');
@@ -746,36 +803,47 @@ function controleBio() {
   if (a('revelation')) return ouvrirPanneau(plaque('Contrôle biologique', ['Analyse terminée.', 'Membre six : marqueurs de la contamination, stade précoce.']), 'etroit');
   const nouveaux = ['ACH_J12', 'ACH_J15', 'ACH_J18', 'ACH_J21'].filter(j => S.journaux.includes(j)).length;
   if (!a('tablette') || nouveaux < 2) return ouvrirPanneau(plaque('Contrôle biologique', ['Analyse transférée ici par le Dr Achard. En attente.', a('tablette') ? 'Les journaux du médecin, sur la tablette, précèdent l\'analyse.' : 'Le médecin de bord doit d\'abord la demander.']), 'etroit');
+  // avec un téléphone, chaque membre pose le pouce sur le Terminal ; sans téléphone, sur la plaque de la station
+  const auTel = !sansTel && [...roles.entries()].some(([id, r]) => r !== 'radio' && hote.liens.has(id));
+  if (!bio) { bio = new Set(); envoyerTelephones(); }
   const d = el('article', 'plaque bio');
-  d.append(el('h2', null, 'Contrôle biologique'), el('p', 'sous', 'Chaque membre présent pose la main sur la plaque.'));
-  const r = el('div', 'mains'); const poses = new Set();
+  d.append(el('h2', null, 'Contrôle biologique'), el('p', 'sous', auTel ? 'L\'analyse se fait sur le Terminal : chaque membre, à son tour, pose le pouce sur l\'écran du téléphone et le garde.' : 'Chaque membre présent pose la main sur la plaque.'));
+  const r = el('div', 'mains');
   for (const m of S.eveilles) {
-    const b = el('button', 'main'); b.type = 'button'; b.append(el('span', 'num', String(m)), el('span', null, 'Membre ' + NOMBRES[m]));
-    b.addEventListener('click', async () => {
-      if (poses.has(m)) return; poses.add(m); b.classList.add('posee'); son.jouer('UI_02', 'ui', .7);
-      if (poses.size === S.eveilles.length) {
-        d.append(el('p', 'analyse', 'Analyse en cours…'));
-        await attendre(5000);
-        fermerPanneau();
-        poser('revelation'); sauver();
-        son.jouer('ALR_03', 'alarme');
-        await attendre(1200);
-        await dire('HEL_22');
-        debloquer('contamination');
-        await attendre(1800);
-        await dire('ACH_NV02');
-        await dire('ACH_I07', { pause: 900 });
-        await dire('ACH_I04', { pause: 1200 });
-        await dire('HEL_24');
-        await dire('HEL_25');
-        son.boucle('musique', 'MUS_01', 'musique', .9, 4);
-        objectif('choix'); envoyerTelephones();
-      }
-    });
+    const b = el('button', 'main' + (bio.has(m) ? ' posee' : '')); b.type = 'button'; b.dataset.m = m; b.disabled = auTel;
+    b.append(el('span', 'num', String(m)), el('span', null, 'Membre ' + NOMBRES[m]));
+    b.addEventListener('click', () => mainPosee(m));
     r.append(b);
   }
   d.append(r);
   ouvrirPanneau(d, 'etroit');
+  if (auTel) telephones('terminal', { t: 'notif', texte: 'Contrôle biologique : posez le pouce, chacun votre tour.' });
+}
+let bio = null; // membres déjà passés au contrôle biologique, tant que l'analyse est ouverte
+async function mainPosee(m) {
+  if (!bio || bio.has(m) || !S.eveilles.includes(m) || a('revelation')) return;
+  bio.add(m); son.jouer('UI_02', 'ui', .7);
+  document.querySelectorAll(`.main[data-m="${m}"]`).forEach(b => b.classList.add('posee'));
+  envoyerTelephones();
+  if (bio.size < S.eveilles.length) return;
+  if (!$('.plaque.bio')) controleBio();
+  $('.plaque.bio').append(el('p', 'analyse', 'Analyse en cours…'));
+  await attendre(5000);
+  fermerPanneau();
+  bio = null;
+  poser('revelation'); sauver(); envoyerTelephones();
+  son.jouer('ALR_03', 'alarme'); eclair();
+  await attendre(1200);
+  await dire('HEL_22');
+  debloquer('contamination');
+  await attendre(1800);
+  await dire('ACH_NV02');
+  await dire('ACH_I07', { pause: 900 });
+  await dire('ACH_I04', { pause: 1200 });
+  await dire('HEL_24');
+  await dire('HEL_25');
+  son.boucle('musique', 'MUS_01', 'musique', .9, 4);
+  objectif('choix'); envoyerTelephones();
 }
 function pupitreAutorisation() {
   if (!a('revelation')) { son.jouer('HEL_S3', 'voix'); return ouvrirPanneau(plaque('Pupitre d\'autorisation', ['Aucune décision en attente.']), 'etroit'); }
@@ -848,7 +916,8 @@ function etatPour(role) {
     hist: S ? S.hist.map(h => ({ cle: h.cle, q: h.q, mauvaise: !!h.mauvaise })) : [],
     // la radio capte dès qu'elle est reliée, avant même le départ : sans état de partie, rien d'amplifié, phase « avant »
     radio: { ampli: !!S && a('ampli'), phase: S && a('air') ? 'apres' : S && a('panne') ? 'panne' : 'avant', trouve: !!S && a('fer05'), canaux: D.RADIO.canaux, min: D.RADIO.min, max: D.RADIO.max, largeur: D.RADIO.largeur, accroche: D.RADIO.accroche, telemetrie: D.TELEMETRIE, sons: D.SONS, prive: D.VOIX.FER_05.t },
-    attenteAuto, fin: S && S.fin, sons: ETUDIANTS ? null : { sons: M.sons.filter(c => /^(UI_09|UI_10|UI_11|UI_13|MEC_11|RAD_|FER_05_TEL)/.test(c)), dossier: M.dossier },
+    attenteAuto, fin: S && S.fin,
+    bio: role !== 'radio' && S && bio ? { membres: S.eveilles, poses: [...bio] } : null, sons: ETUDIANTS ? null : { sons: M.sons.filter(c => /^(UI_09|UI_10|UI_11|UI_13|MEC_11|RAD_|FER_05_TEL)/.test(c)), dossier: M.dossier },
   };
 }
 function envoyerTelephones() { if (!hote) return; for (const [id, role] of roles) hote.envoyer(id, etatPour(role)); majLobby(); }
@@ -865,6 +934,7 @@ function brancher() {
       if (m.t === 'q') question(m.sujet, m.inter);
       else if (m.t === 'auto') autorisation(m.code);
       else if (m.t === 'diffuser') diffusion();
+      else if (m.t === 'main') mainPosee(+m.m);
       else if (m.t === 'revoir') { const h = S.hist.find(x => x.cle === m.cle); if (h) { const [s, i] = h.cle.split('|'); question(s, i); } }
     },
   });
@@ -890,6 +960,23 @@ function majLobby() {
     box.append(c);
   }
   $('#code-station').textContent = hote.code;
+  if (!demarre) consigneTel();
+}
+const telRelies = () => hote ? [...roles.keys()].filter(id => hote.liens.has(id)).length : 0;
+// avant le réveil : dire quoi faire du QR code, et prévenir si personne ne l'a scanné
+let avertiSansTel = false;
+function consigneTel() {
+  const c = $('#consigne-tel'); if (!c) return;
+  const n = S ? S.n : choixJoueurs, relies = telRelies();
+  c.classList.toggle('alerte', avertiSansTel && !relies);
+  if (sansTel) { c.textContent = 'Essai sans téléphone : le Terminal et la Radio s\'ouvrent sur la station.'; return; }
+  if (avertiSansTel && !relies) { c.textContent = 'Aucun téléphone n\'est relié. Scannez le code, ou touchez « Réveiller l\'équipage » une seconde fois pour jouer sans téléphone.'; return; }
+  c.replaceChildren();
+  const deux = n !== 2;
+  if (relies >= (deux ? 2 : 1)) { c.append(el('b', null, deux ? 'Les deux téléphones sont reliés.' : 'Le téléphone est relié.'), ' Vous pouvez réveiller l\'équipage.'); return; }
+  c.append(el('b', null, 'Avant de commencer : '), deux
+    ? 'scannez chaque code avec l\'appareil photo d\'un téléphone, un pour le Terminal et un pour la Radio, puis touchez « Activer l\'instrument » sur chacun.'
+    : 'scannez ce code avec l\'appareil photo d\'un téléphone, puis touchez « Activer l\'instrument ».');
 }
 let choixJoueurs = 2;
 function lobby() {
@@ -898,9 +985,16 @@ function lobby() {
   document.querySelectorAll('#nb-joueurs button').forEach(b => {
     b.addEventListener('click', () => { choixJoueurs = +b.dataset.n; document.querySelectorAll('#nb-joueurs button').forEach(x => x.setAttribute('aria-pressed', x === b)); majLobby(); });
   });
-  $('#commencer').addEventListener('click', () => commencer(nouvelEtat(choixJoueurs)));
+  $('#commencer').addEventListener('click', () => {
+    if (!sansTel && hote && !telRelies()) {
+      if (!avertiSansTel) { avertiSansTel = true; consigneTel(); return; }
+      sansTel = true; $('#sans-tel').checked = true; document.body.classList.add('sans-tel');
+    }
+    commencer(nouvelEtat(choixJoueurs));
+  });
   $('#reprendre').addEventListener('click', () => commencer(ancien, true));
-  $('#sans-tel').addEventListener('change', e => { sansTel = e.target.checked; document.body.classList.toggle('sans-tel', sansTel); });
+  $('#sans-tel').addEventListener('change', e => { sansTel = e.target.checked; document.body.classList.toggle('sans-tel', sansTel); consigneTel(); });
+  consigneTel();
   try { brancher(); } catch (e) { $('#qr').textContent = 'Liaison téléphone indisponible.'; }
   const img = urlImage('coursive') || urlImage('station_mars'); if (img) $('#accueil').style.setProperty('--fond', `url("${new URL(img, location.href).href}")`);
 }
@@ -916,6 +1010,7 @@ async function commencer(etat, reprise) {
   if (!reprise) {
     await cinematique('CIN_00');
     aller('cryo', { silencieux: true });
+    setTimeout(() => { if (!S.fin && marquer('aide')) aide(); }, 1800);
   } else { aller(S.lieu, { silencieux: true }); if (a('revelation') && !S.fin) son.boucle('musique', 'MUS_01', 'musique', .9, 4); }
   demarrerHorloge();
 }
@@ -1075,12 +1170,31 @@ $('#lieu-nom').addEventListener('click', () => planStation());
 $('#btn-terminal').addEventListener('click', terminalLocal);
 $('#btn-radio').addEventListener('click', radioLocale);
 $('#rejouer').addEventListener('click', () => { try { localStorage.removeItem(CLE_SAUVE); } catch (_) {} location.reload(); });
+$('#aide').addEventListener('click', aide);
 $('#journal-helios').addEventListener('click', () => {
   const d = el('article', 'plaque'); d.append(el('h2', null, 'Ce qu\'HÉLIOS a affiché'));
   if (!S.reponses.length) d.append(el('p', 'sous', 'Rien pour l\'instant.'));
   S.reponses.forEach(r => { const b = el('div', 'msg'); if (r.q) b.append(el('p', 'quand', r.q)); b.append(el('p', null, r.t)); d.append(b); });
   ouvrirPanneau(d);
 });
+// comment jouer : ouvert une fois après le réveil, puis par le bouton Aide
+function aide() {
+  const d = el('article', 'plaque aide');
+  d.append(el('h2', null, 'Comment jouer'));
+  const tel = !sansTel;
+  const l = el('ul', 'regles');
+  [
+    ['Explorez.', 'Touchez ce qui vous intrigue dans le décor. « Repérer » (touche R) montre tout ce qui se touche.'],
+    ['Piochez.', 'Des numéros sont cachés dans le décor et sur les objets. Tapez-les dans « Piocher la carte », en bas, pour prendre la carte.'],
+    ['Assemblez.', 'Choisissez deux cartes qui vont ensemble : leurs numéros s\'additionnent et donnent une nouvelle carte.'],
+    ['Interrogez HÉLIOS.', tel ? 'Sur le téléphone, onglet Terminal : un mot, un sujet, « Transmettre ». La réponse s\'affiche et s\'entend ici.' : 'Bouton Terminal : un mot, puis un sujet. La réponse s\'affiche ici.'],
+    ['Écoutez la radio.', tel ? 'Sur le téléphone, onglet Radio : penchez-le pour parcourir les canaux.' : 'Bouton Radio : glissez le curseur pour parcourir les canaux.'],
+    ['Surveillez l\'air.', 'L\'oxygène, à droite, baisse avec le temps. Une question inutile, un code faux ou un indice en coûtent davantage. À zéro, la partie est perdue.'],
+    ['Bloqués ?', 'Votre objectif est en haut à gauche. « Indice » vous aide, contre 2 % d\'oxygène.'],
+  ].forEach(([t, x]) => { const li = el('li'); li.append(el('b', null, t), ' ' + x); l.append(li); });
+  d.append(l);
+  ouvrirPanneau(d);
+}
 function planStation() {
   const d = el('article', 'plaque plan-station');
   d.append(el('h2', null, 'Perséphone'));

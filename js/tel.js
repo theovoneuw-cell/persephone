@@ -123,6 +123,7 @@ function rendre() {
     li.append(b); H.append(li);
   });
   montrerAuto(!!E.attenteAuto);
+  montrerBio(E.bio);
   majChoix();
   accorder();
 }
@@ -200,6 +201,32 @@ $('#envoyer').addEventListener('click', () => {
   $('#apercu-note').textContent = 'Transmise. HÉLIOS répond sur la station.';
   clearTimeout(b.tr); b.tr = setTimeout(() => { b.classList.remove('transmise'); majChoix(); }, 4200);
 });
+// ------------------------------------------------------------------ contrôle biologique
+// la station l'ouvre ; chaque membre garde le pouce sur le cercle, à tour de rôle
+const NOMS = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six'];
+let bioMembre = null;
+function montrerBio(b) {
+  const box = $('#bio');
+  const reste = b ? b.membres.filter(m => !b.poses.includes(m)) : [];
+  if (!b || !reste.length) { box.hidden = true; bioMembre = null; return; }
+  if (box.hidden) { box.hidden = false; if (ROLE === 'les-deux' && vue !== 'terminal') montrer('terminal'); if (navigator.vibrate) navigator.vibrate([30, 60, 30]); }
+  bioMembre = reste[0];
+  $('#bio-qui').textContent = 'Membre ' + NOMS[bioMembre] + ', à vous';
+  const L = $('#bio-liste'); L.replaceChildren();
+  b.membres.forEach(m => L.append(el('li', b.poses.includes(m) ? 'ok' : m === bioMembre ? 'ici' : '', 'Membre ' + m + (b.poses.includes(m) ? ' · fait' : ''))));
+}
+(() => {
+  const pad = $('#bio-pad'); let t = null;
+  const lacher = () => { clearTimeout(t); t = null; pad.classList.remove('appui'); };
+  pad.addEventListener('pointerdown', e => {
+    if (bioMembre == null) return;
+    e.preventDefault(); pad.setPointerCapture(e.pointerId); pad.classList.add('appui'); vibrer();
+    const m = bioMembre;
+    t = setTimeout(() => { lacher(); bip('UI_02', .7); if (navigator.vibrate) navigator.vibrate(60); if (client) client.envoyer({ t: 'main', m }); }, 1600);
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => pad.addEventListener(ev, lacher));
+  pad.addEventListener('contextmenu', e => e.preventDefault());
+})();
 function montrerAuto(oui) { $('#auto').hidden = !oui; document.body.classList.toggle('auto-ouvert', oui); }
 $('#auto').addEventListener('submit', e => { e.preventDefault(); const v = $('#auto-code').value.trim(); if (!v) return; client.envoyer({ t: 'auto', code: v }); $('#auto-code').value = ''; montrerAuto(false); });
 
@@ -397,4 +424,4 @@ requestAnimationFrame(boucleSpectre);
 addEventListener('resize', dessinerEchelle);
 
 // interface de test
-window.TEL = { regler: v => regler(v), etat: () => E, f: () => f, auDoigt };
+window.TEL = { regler: v => regler(v), etat: () => E, f: () => f, auDoigt, montrerBio };

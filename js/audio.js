@@ -47,8 +47,10 @@ export class Moteur {
   // une voix : baisse le reste pendant qu'elle parle
   async voix(code, fin) {
     if (!this.ctx) { fin && fin(); return 0; }
+    const gen = this.gen = (this.gen || 0) + 1;
     const buf = await this.charger(code);
-    if (!buf) { fin && fin(); return 0; }
+    // coupée pendant le chargement : elle ne doit pas partir après coup
+    if (!buf || this.coupee >= gen) { fin && fin(); return 0; }
     const t = this.ctx.currentTime;
     for (const b of ['amb', 'tension', 'musique']) { const g = this.bus[b].gain; g.cancelScheduledValues(t); g.setTargetAtTime(b === 'musique' ? .55 : .5, t, .15); }
     const s = this.ctx.createBufferSource(); s.buffer = buf; s.connect(this.bus.voix); s.start(t + .05, buf.bornes[0]);
@@ -60,7 +62,7 @@ export class Moteur {
     this.voixEnCours = s;
     return buf.duration;
   }
-  couperVoix() { try { this.voixEnCours && this.voixEnCours.stop(); } catch (_) {} }
+  couperVoix() { this.coupee = this.gen || 0; try { this.voixEnCours && this.voixEnCours.stop(); } catch (_) {} }
 
   // boucle nommée par emplacement (amb, musique, alarme…) avec fondu enchaîné
   async boucle(place, code, bus, vol = 1, fondu = 2.5) {
